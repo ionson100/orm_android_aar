@@ -192,11 +192,11 @@ class AnnotationOrm {
     }
 
     static void getTableNameInner(Class aClass, Temp table) {
-
         try {
             if (aClass.isAnnotationPresent(MapTableName.class)||aClass.isAnnotationPresent(MapTable.class)) {
                 final MapTableName fUser=(MapTableName)aClass.getAnnotation(MapTableName.class);
-                //final MapTable fReal=(MapTable) aClass.getAnnotation(MapTable.class);
+
+
                 if(fUser!=null){
                     table.name =fUser.value();
                 }else{
@@ -226,6 +226,7 @@ class AnnotationOrm {
         public String name;
         public String where;
         public String append;
+        public boolean isPersistent;
     }
 
 }

@@ -16,8 +16,8 @@ class InnerInsertBulk<F> {
     private int it = 0;
     private final CacheMetaData metaData;
 
-    InnerInsertBulk(Class<F> aClass) {
-        metaData = getCacheMetaData(aClass);
+    InnerInsertBulk( CacheMetaData data) {
+        metaData = data;
         sql.append(" INSERT INTO ");
         sql.append(metaData.tableName).append(" (");
         List<ItemField> itemFields = new ArrayList<>(metaData.listColumn);

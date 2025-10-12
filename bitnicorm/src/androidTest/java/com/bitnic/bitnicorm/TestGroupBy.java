@@ -12,74 +12,35 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The type Test group by.
- */
 @RunWith(AndroidJUnit4.class)
 public class TestGroupBy extends BaseTestClass{
 
-    /**
-     * The type Table serialize.
-     */
     static class TableSerialize implements Serializable {
-        /**
-         * The Name.
-         */
         public String name="ion100";
-        /**
-         * The Age.
-         */
         public int age = 64;
     }
 
-    /**
-     * The type Table serialize json.
-     */
     static class TableSerializeJson  {
-        /**
-         * The Name.
-         */
         public String name="ion100";
-        /**
-         * The Age.
-         */
         public int age = 64;
     }
 
-    /**
-     * The type Table group by.
-     */
     @MapTableName("oreder_by")
      static class TableGroupBy {
 
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
          public int id;
 
-        /**
-         * The Key.
-         */
         @MapColumn
          public String key;
 
 
-        /**
-         * The Value.
-         */
         @MapColumn
          public String value;
 
 
-        /**
-         * The Table serialize.
-         */
         @MapColumn
         public TableSerialize tableSerialize;
-        /**
-         * The Table serialize json.
-         */
         @MapColumn
         @MapJsonColumn
         public TableSerializeJson tableSerializeJson;
@@ -91,9 +52,6 @@ public class TestGroupBy extends BaseTestClass{
         Configure.getSession().deleteRows(MyTable.class);
     }
 
-    /**
-     * Test group by core.
-     */
     @Test
     public void TestGroupByCore(){
         preInit();
@@ -136,9 +94,6 @@ public class TestGroupBy extends BaseTestClass{
         });
     }
 
-    /**
-     * Test distinct by core.
-     */
     @Test
     public void TestDistinctByCore(){
         preInit();
@@ -177,9 +132,6 @@ public class TestGroupBy extends BaseTestClass{
 
     }
 
-    /**
-     * Test serialize.
-     */
     @Test
     public void TestSerialize(){
         preInit();
@@ -204,28 +156,16 @@ public class TestGroupBy extends BaseTestClass{
 
     }
 
-    /**
-     * The type Table bytes.
-     */
     @MapTableName("t_bytes")
     static class TableBytes{
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
         public long id;
 
-        /**
-         * The Bytes.
-         */
         @MapColumn
         public byte[] bytes;
     }
 
 
-    /**
-     * Test bytes.
-     */
     @Test
     public void TestBytes(){
 
@@ -245,9 +185,6 @@ public class TestGroupBy extends BaseTestClass{
         assertEquals(1,1);
     }
 
-    /**
-     * Test bytes insert bulk.
-     */
     @Test
     public void TestBytesInsertBulk(){
 
@@ -273,9 +210,6 @@ public class TestGroupBy extends BaseTestClass{
         assertEquals("ion100",o.tableSerialize.name);
     }
 
-    /**
-     * Test bytes test transaction.
-     */
     @Test
     public void TestBytesTestTransaction(){
 
@@ -316,9 +250,6 @@ public class TestGroupBy extends BaseTestClass{
 
     }
 
-    /**
-     * Test serialize 2.
-     */
     @Test
     public void TestSerialize2(){
         preInit();
@@ -376,9 +307,6 @@ public class TestGroupBy extends BaseTestClass{
 
     }
 
-    /**
-     * Test serialize 3.
-     */
     @Test
     public void TestSerialize3() {
         preInit();
@@ -396,6 +324,7 @@ public class TestGroupBy extends BaseTestClass{
                 t.value = "name2";
                 t.tableSerialize = new TableSerialize();
                 t.tableSerializeJson = new TableSerializeJson();
+                list.add(t);
             }
             session.insertBulk(list);
             list = session.getList(TableGroupBy.class);

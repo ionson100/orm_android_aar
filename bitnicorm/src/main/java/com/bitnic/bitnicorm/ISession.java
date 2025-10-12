@@ -667,14 +667,6 @@ public interface ISession extends Closeable {
    <T> void createTableIfNotExists(@NonNull Class<T> aClass) throws Exception;
 
     /**
-     * @param aClass Instances of the  represent classes and interfaces in a running Java application.
-     *               This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
-     *               and a public field marked with the primary key annotation.
-     * @return sql script for create table
-     */
-
-
-    /**
      * Gets the path to the database file.
      *
      * @return string as the path to the database file.
@@ -948,7 +940,7 @@ public interface ISession extends Closeable {
      * }
      * </pre>
      */
-    <T, D extends Object> List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects);
+    <T, D> List<D> getListSelect(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... objects);
 
     /**
      * An iterator for traversing a Cursor with a callback function
@@ -1043,4 +1035,12 @@ public interface ISession extends Closeable {
      * @return object {@link ContentValues}
      */
     <T> ContentValues getContentValuesForUpdate(@NonNull Class<T> aClass,PairColumnValue columnValues);
+
+    /**
+     * This method inserts or updates objects that inherit the Persistent class, depending on the value of orm it decides whether to insert or update the object.
+     * @param item An object, class type must be marked with annotation @{@link MapTable} or @{@link MapTableName}
+     * @param <T>  The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
+     * @return 1-success , 0 - not success
+     */
+    <T> int save(@NonNull T item);
 }

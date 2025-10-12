@@ -34,6 +34,107 @@ String, UUID, BigDecimal как TEXT, \
 > Внимание: Если вы хотите пользоваться атрибутом ```@MapJsonColumn```, у вас должна быть подключенная зависимость:
 > ```implementation("com.google.code.gson:gson:2.13.2")```, версию можете выбрать сами.
 
+Пример сериализации c использованием [Serializable](https://www.geeksforgeeks.org/java/serialization-and-deserialization-in-java/)
+и
+[Externalizable](https://www.geeksforgeeks.org/java/externalizable-interface-java/)
+
+```java
+    class Children implements Serializable {
+        public String name = "Leo";
+        public int age = 3;
+    }
+    class ExternalizableDemo implements Externalizable {
+        public String firstName="ion";
+        public String lastName="Ionow";
+        public int age=18;
+
+        public ExternalizableDemo() {
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            if (in.readBoolean()) {
+                firstName = in.readUTF();
+            }
+            if (in.readBoolean()) {
+                lastName = in.readUTF();
+            }
+            age = in.readInt();
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            if (firstName == null) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                out.writeUTF(firstName);
+            }
+            if (lastName == null) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                out.writeUTF(lastName);
+            }
+            out.writeInt(age);
+        }
+    }
+
+    @MapTableName("my_user")
+    static class MyUser {
+    
+        @MapPrimaryKey
+        public long id;
+        
+        @MapColumn
+        public String name = "simple";
+        
+        @MapColumn
+        public int age = 15;
+        
+        @MapColumn
+        public String email = "ion@df.com";
+        
+        @MapColumn
+        public List<Children> childrenList = new ArrayList<>();
+
+        @MapColumn
+        public ExternalizableDemo  externalizable;
+    }
+
+```
+```sql
+ CREATE TABLE IF NOT EXISTS "my_user" (
+ "id"  INTEGER  PRIMARY KEY,
+ "age" INTEGER DEFAULT 0 ,
+ "childrenList" BLOB,
+ "email" TEXT,
+ "externalizable" BLOB,
+ "name" TEXT);
+```
+```javascript
+ISession session = Configure.getSession();
+session.dropTableIfExists(MyUser.class);
+try {
+    session.createTableIfNotExists(MyUser.class);
+} catch (Exception e) {
+    throw new RuntimeException(e);
+}
+var table=new MyUser();
+table.childrenList.add(new Children());
+table.externalizable=new ExternalizableDemo();
+
+session.insert(table);
+var list = session.getList(MyUser.class);
+list.forEach(myTable1 -> {
+    myTable1.childrenList.forEach(children -> {
+        Log.i("------------", children.name + "@" + children.age);
+    });
+    Log.i("------------",myTable1.externalizable.firstName+"@"+myTable1.externalizable.lastName+"@"+myTable1.externalizable.age);
+});
+assertTrue(list.size() == 1);
+assertTrue(list.get(0).id == 1L);
+```
 
 
 
@@ -43,8 +144,7 @@ String, UUID, BigDecimal как TEXT, \
 
 
 
-
-Пример класса реализации:
+Пример возможных реализации:
 
 ```java
 

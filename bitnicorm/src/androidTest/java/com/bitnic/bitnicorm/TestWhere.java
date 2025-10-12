@@ -17,15 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- * The type Test where.
- */
 @RunWith(AndroidJUnit4.class)
 public class TestWhere extends BaseTestClass {
 
-    /**
-     * Test where.
-     */
     @Test
     public void TestWhere() {
         initConfig();
@@ -72,9 +66,6 @@ public class TestWhere extends BaseTestClass {
         assertEquals(0, list2.size());
     }
 
-    /**
-     * Test where 2.
-     */
     @Test
     public void TestWhere2() {
         initConfig();
@@ -130,34 +121,17 @@ public class TestWhere extends BaseTestClass {
 
     }
 
-    /**
-     * The type Simple table.
-     */
     @MapTable
     static class SimpleTable {
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
         public long id;
-        /**
-         * The Name.
-         */
         @MapColumn
         public String name="name";
-        /**
-         * The Age.
-         */
         public int age=30;
 
 
     }
 
-    /**
-     * Test 123.
-     *
-     * @throws IOException the io exception
-     */
     @Test
     public void Test123() throws IOException {
         initConfig();
@@ -189,9 +163,6 @@ public class TestWhere extends BaseTestClass {
 
     }
 
-    /**
-     * Test 1234.
-     */
     @Test
     public void Test1234()  {
         initConfig();

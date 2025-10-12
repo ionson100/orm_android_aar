@@ -16,18 +16,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
- */
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest extends BaseTestClass {
 
 
-    /**
-     * Use app context.
-     */
     @Test
     public void useAppContext() {
         // Context of the app under test.
@@ -51,9 +43,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         assertEquals(2,list.size());
     }
 
-    /**
-     * Test delete.
-     */
     @Test
     public void testDelete(){
         initConfig();
@@ -67,9 +56,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         assertEquals(0,list.size());
     }
 
-    /**
-     * Test delete where.
-     */
     @Test
     public void testDeleteWhere(){
         initConfig();
@@ -84,9 +70,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
     }
 
 
-    /**
-     * Test insert bulk list.
-     */
     @Test
     public void testInsertBulkList(){
         initConfig();
@@ -117,9 +100,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
 
     }
 
-    /**
-     * Test count.
-     */
     @Test
     public void testCount(){
         initConfig();
@@ -145,9 +125,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         assertEquals(1,count);
     }
 
-    /**
-     * Test any.
-     */
     @Test
     public void testAny(){
         initConfig();
@@ -174,9 +151,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
     }
 
 
-    /**
-     * Test first or default update.
-     */
     @Test
     public void testFirstOrDefaultUpdate(){
         initConfig();
@@ -204,9 +178,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         assertEquals("222",myTable.name);
     }
 
-    /**
-     * Test single not ok.
-     */
     @Test
     public void testSingleNotOk()  {
         initConfig();
@@ -224,9 +195,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
 
     }
 
-    /**
-     * Test single ok.
-     */
     public void testSingleOk() {
         initConfig();
         ISession session=Configure.getSession();
@@ -244,9 +212,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
 
     }
 
-    /**
-     * Test single or default ok.
-     */
     @Test
     public void testSingleOrDefaultOk(){
         initConfig();
@@ -261,9 +226,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         assertNotNull(myTable1);
     }
 
-    /**
-     * Test single or default not ok.
-     */
     public void testSingleOrDefaultNotOk(){
         initConfig();
         ISession session=Configure.getSession();
@@ -277,9 +239,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         assertNull(myTable1);
     }
 
-    /**
-     * Test first ok.
-     */
     @Test
     public void testFirstOk() {
         initConfig();
@@ -297,9 +256,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         }
     }
 
-    /**
-     * Test first not ok.
-     */
     @Test
     public void testFirstNotOk() {
         initConfig();
@@ -317,9 +273,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         }
     }
 
-    /**
-     * Test select list.
-     */
     @Test
     public void testSelectList() {
         initConfig();
@@ -340,9 +293,6 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         assertEquals(2,list1.size());
     }
 
-    /**
-     * Test user table.
-     */
     @Test
     public void testUserTable(){
         initConfig();

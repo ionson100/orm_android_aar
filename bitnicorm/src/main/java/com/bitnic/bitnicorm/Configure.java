@@ -240,6 +240,11 @@ public class Configure implements ISession {
     @Override
     public <T> int update(@NonNull T item) {
         CacheMetaData<T> d = getCacheMetaData(item.getClass());
+        if(d.isPersistent){
+            if(!((Persistent)item).isPersistent){
+                throw new RuntimeException("You are trying to update a non-persistent object that is not in the database.");
+            }
+        }
         ContentValues contentValues =getInnerContentValues(item,d);
         int res;
         try {
@@ -251,6 +256,9 @@ public class Configure implements ISession {
             String[] param = new String[]{String.valueOf(key)};
             res=sqLiteDatabaseForWritable.update(d.tableName, contentValues, where, param);
             Logger.LogI(Utils.getStringUpdate(d.tableName,contentValues,where));
+            if(d.isPersistent){
+                ((Persistent)item).isPersistent=true;
+            }
             if (d.isIAction) {
                 ((IEventOrm) item).afterUpdate();
             }
@@ -264,6 +272,12 @@ public class Configure implements ISession {
     @Override
     public <T> void insert(@NonNull T item) {
         CacheMetaData<T> d = getCacheMetaData(item.getClass());
+        if(d.isPersistent){
+            var per=((Persistent)item);
+            if(per.isPersistent){
+                throw new RuntimeException("You are trying to insert an object into the database that was previously retrieved from the database, which is not very logical.");
+            }
+        }
 
         if (d.isIAction) {
             ((IEventOrm) item).beforeInsert();
@@ -290,6 +304,9 @@ public class Configure implements ISession {
             if (runTransaction) {
                 endTransaction();
             }
+        }
+        if(d.isPersistent){
+            ((Persistent)item).isPersistent=true;
         }
         if (d.isIAction) {
             ((IEventOrm) item).afterInsert();
@@ -384,7 +401,7 @@ public class Configure implements ISession {
     @Override
     public <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... objects) {
 
-        CacheMetaData d = getCacheMetaData(aClass);
+        CacheMetaData<T> d = getCacheMetaData(aClass);
         where = whereBuilder(where, d);
         Cursor cursor = null;
         try {
@@ -394,6 +411,9 @@ public class Configure implements ISession {
             if (cursor.moveToFirst()) {
                 do {
                     T sd = aClass.newInstance();
+                    if(d.isPersistent){
+                        ((Persistent)sd).isPersistent=true;
+                    }
                     Compound(d.listColumn, d.keyColumn, cursor, sd);
                     list.add(sd);
                 } while (cursor.moveToNext());
@@ -419,6 +439,9 @@ public class Configure implements ISession {
             cursor = execSQLRaw(sql, objects);
             if (cursor.moveToFirst()) {
                 T sd = aClass.newInstance();
+                if(d.isPersistent){
+                    ((Persistent)sd).isPersistent=true;
+                }
                 Compound(d.listColumn, d.keyColumn, cursor, sd);
                 return sd;
 
@@ -456,6 +479,9 @@ public class Configure implements ISession {
             if (cursor.moveToFirst()) {
                 do {
                     T sd = aClass.newInstance();
+                    if(d.isPersistent){
+                        ((Persistent)sd).isPersistent=true;
+                    }
                     Compound(d.listColumn, d.keyColumn, cursor, sd);
                     resultArray[index] = sd;
                     index++;
@@ -471,7 +497,7 @@ public class Configure implements ISession {
                throw new Exception("!!!There is more than one object by condition");
             }
         } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            throw new Exception(ex);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -494,6 +520,9 @@ public class Configure implements ISession {
             if (cursor.moveToFirst()) {
                 do {
                     T sd = aClass.newInstance();
+                    if(d.isPersistent){
+                        ((Persistent)sd).isPersistent=true;
+                    }
                     Compound(d.listColumn, d.keyColumn, cursor, sd);
                     resultArray[index] = sd;
                     index++;
@@ -608,7 +637,7 @@ public class Configure implements ISession {
     @Override
     public <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> function) {
         try (cursor) {
-            CacheMetaDataFree d = CacheDictionary.getCacheMetaDataFree(aClass);
+            CacheMetaDataFree<?> d = CacheDictionary.getCacheMetaDataFree(aClass);
             if (cursor.moveToFirst()) {
                 do {
                     T sd = aClass.newInstance();
@@ -626,10 +655,10 @@ public class Configure implements ISession {
         if (columnName.isEmpty()) {
             throw new ArithmeticException("Parameter columnName, empty or is null,");
         }
-        CacheMetaData d = getCacheMetaData(aClass);
+        CacheMetaData<T> d = getCacheMetaData(aClass);
         boolean isthis = false;
         for (int i = 0; i < d.listColumn.size(); i++) {
-            ItemField field = (ItemField) d.listColumn.get(i);
+            ItemField field = d.listColumn.get(i);
             if (field.columnNameRaw.equals(columnName)) {
                 isthis = true;
             }
@@ -653,6 +682,9 @@ public class Configure implements ISession {
                     Object key = Utils.getObjectFromCursor(cursor, colimnIndex);
 
                     T sd = aClass.newInstance();
+                    if(d.isPersistent){
+                        ((Persistent)sd).isPersistent=true;
+                    }
                     Compound(d.listColumn, d.keyColumn, cursor, sd);
                     if (map.containsKey(key)) {
                         var maplist = map.get(key);
@@ -682,10 +714,10 @@ public class Configure implements ISession {
         if (columnName.isEmpty()) {
             throw new ArithmeticException("Parameter columnName, empty or is null,");
         }
-        CacheMetaData d = getCacheMetaData(aClass);
+        CacheMetaData<T> d = getCacheMetaData(aClass);
         boolean isthis = false;
         for (int i = 0; i < d.listColumn.size(); i++) {
-            ItemField field = (ItemField) d.listColumn.get(i);
+            ItemField field = d.listColumn.get(i);
             if (field.columnNameRaw.equals(columnName)) {
                 isthis = true;
             }
@@ -734,7 +766,21 @@ public class Configure implements ISession {
         return getInnerContentValuesForUpdate(data,columnValues);
     }
 
-     <T> ContentValues getInnerContentValuesForUpdate(CacheMetaData<T> data, PairColumnValue columnValues) {
+    @Override
+    public <T> int save(@NonNull T item) {
+        CacheMetaData<T> data = getCacheMetaData(item.getClass());
+        if(data.isPersistent==false){
+            throw new RuntimeException("An object of type "+item.getClass()+" does not inherit the class Persistent");
+        }
+        var per=((Persistent)item).isPersistent;
+        if(per==false){
+            insert(item);
+            return 1;
+        }
+         return update(item);
+    }
+
+    <T> ContentValues getInnerContentValuesForUpdate(CacheMetaData<T> data, PairColumnValue columnValues) {
         ContentValues contentValues =  new ContentValues(columnValues.objectMap.size());
         Utils.builderSqlNew(data, contentValues, columnValues.objectMap);
         return contentValues;
@@ -772,15 +818,28 @@ public class Configure implements ISession {
     @Override
     public <T> void insertBulk(@NonNull List<T> tList) {
 
+        if(tList.isEmpty()){
+            throw new ArithmeticException("The list is Empty");
+        }
         tList.forEach(t -> {
             if (t == null) {
-                throw new RuntimeException("The list must not contain empty objects as null");
+                throw new ArithmeticException("The list must not contain empty objects as null");
             }
+
+        });
+        var data=getCacheMetaData(tList.get(0).getClass());
+        tList.forEach(t -> {
+           if(data.isPersistent){
+               if(((Persistent)t).isPersistent){
+                   throw new RuntimeException("Your list contains a persistent object that was previously retrieved from the database.");
+               }
+           }
+
         });
 
         List<List<T>> sd = partition(tList);
         for (List<T> ts : sd) {
-            InnerInsertBulk<T> s = new InnerInsertBulk(tList.get(0).getClass());
+            InnerInsertBulk<T> s = new InnerInsertBulk(data);
             for (T t : ts) {
                 s.add(t);
             }
@@ -797,6 +856,11 @@ public class Configure implements ISession {
                     throw new RuntimeException(ex);
                 }
             }
+        }
+        if(data.isPersistent){
+            tList.forEach(t -> {
+                ((Persistent)t).isPersistent=true;
+            });
         }
     }
 

@@ -5,6 +5,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import android.util.Log;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
@@ -37,6 +40,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -48,9 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * The type Test method.
- */
 @RunWith(AndroidJUnit4.class)
 public class TestMethod extends BaseTestClass {
 
@@ -64,9 +65,6 @@ public class TestMethod extends BaseTestClass {
         return new MyTable("name", 1L, 100, (short) 1, (byte) 8, new BigDecimal("1111111111111"), 1.1D, 1.1F);
     }
 
-    /**
-     * Test insert.
-     */
     @Test
     public void TestInsert() {
         preInit();
@@ -86,9 +84,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test delete.
-     */
     @Test
     public void TestDelete() {
         preInit();
@@ -108,9 +103,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(9, list.size());
     }
 
-    /**
-     * Test delete rows all.
-     */
     @Test
     public void TestDeleteRowsAll() {
         preInit();
@@ -129,11 +121,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(0, list.size());
     }
 
-    /**
-     * Test up date all.
-     *
-     * @throws IOException the io exception
-     */
     @Test
     public void TestUpDateAll() throws IOException {
         preInit();
@@ -159,11 +146,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test not insert.
-     *
-     * @throws IOException the io exception
-     */
     @Test
     public void TestNotInsert() throws IOException {
         preInit();
@@ -183,26 +165,23 @@ public class TestMethod extends BaseTestClass {
         }
     }
 
-    /**
-     * Test not insert bulk.
-     */
     @Test
     public void TestNotInsertBulk() {
         preInit();
         try (ISession session = Configure.getSession()) {
 
 
-                session.createTableIfNotExists(TableNotInsert.class);
+            session.createTableIfNotExists(TableNotInsert.class);
 
-                session.deleteRows(TableNotInsert.class);
-                TableNotInsert tableNotInsert = new TableNotInsert();
-                tableNotInsert.name = "11";
-                tableNotInsert.age = 34;
-                List<TableNotInsert> list = new ArrayList<>(1);
-                list.add(tableNotInsert);
-                session.insertBulk(list);
-                var t = session.first(TableNotInsert.class, null);
-                assertEquals("SIMPLE", t.name);
+            session.deleteRows(TableNotInsert.class);
+            TableNotInsert tableNotInsert = new TableNotInsert();
+            tableNotInsert.name = "11";
+            tableNotInsert.age = 34;
+            List<TableNotInsert> list = new ArrayList<>(1);
+            list.add(tableNotInsert);
+            session.insertBulk(list);
+            var t = session.first(TableNotInsert.class, null);
+            assertEquals("SIMPLE", t.name);
 
 
         } catch (Exception e) {
@@ -210,9 +189,6 @@ public class TestMethod extends BaseTestClass {
         }
     }
 
-    /**
-     * Test simple create.
-     */
     @Test
     public void TestSimpleCreate() {
         preInit();
@@ -231,9 +207,6 @@ public class TestMethod extends BaseTestClass {
         }
     }
 
-    /**
-     * Test insert bulk ass array.
-     */
     @Test
     public void TestInsertBulkAssArray() {
         preInit();
@@ -249,9 +222,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test raw execute.
-     */
     @Test
     public void TestRawExecute() {
         preInit();
@@ -267,26 +237,14 @@ public class TestMethod extends BaseTestClass {
         stringList.forEach(s -> assertEquals("name", s));
     }
 
-    /**
-     * The type Temp name.
-     */
     static class tempName {
-        /**
-         * Instantiates a new Temp name.
-         */
         public tempName() {
             myName = "no";
         }
 
-        /**
-         * The My name.
-         */
         public String myName;
     }
 
-    /**
-     * Test raw execute 2.
-     */
     @Test
     public void TestRawExecute2() {
         preInit();
@@ -302,31 +260,16 @@ public class TestMethod extends BaseTestClass {
         stringList.forEach(s -> assertEquals("name", s.myName));
     }
 
-    /**
-     * The type M float.
-     */
     @MapTable
     static class MFloat {
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
         public int id;
-        /**
-         * The Name.
-         */
         @MapColumn
         public String name = "name";
-        /**
-         * The M float.
-         */
         @MapColumn
         public float mFloat = 3.3F;
     }
 
-    /**
-     * Test cursor row as map.
-     */
     @Test
     public void TestCursorRowAsMap() {
         preInit();
@@ -354,9 +297,6 @@ public class TestMethod extends BaseTestClass {
         });
     }
 
-    /**
-     * Test cursor row as array.
-     */
     @Test
     public void TestCursorRowAsArray() {
         preInit();
@@ -382,9 +322,6 @@ public class TestMethod extends BaseTestClass {
         });
     }
 
-    /**
-     * Test drop table.
-     */
     @Test
     public void TestDropTable() {
         preInit();
@@ -399,9 +336,6 @@ public class TestMethod extends BaseTestClass {
         }
     }
 
-    /**
-     * Test drop table 2.
-     */
     @Test
     public void TestDropTable2() {
         preInit();
@@ -416,9 +350,6 @@ public class TestMethod extends BaseTestClass {
         }
     }
 
-    /**
-     * Test any.
-     */
     @Test
     public void TestAny() {
         preInit();
@@ -433,9 +364,6 @@ public class TestMethod extends BaseTestClass {
         assertFalse(res2);
     }
 
-    /**
-     * Test transaction.
-     */
     @Test
     public void TestTransaction() {
         preInit();
@@ -460,9 +388,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test transaction 2.
-     */
     public void TestTransaction2() {
         preInit();
         ISession session = Configure.getSession();
@@ -484,9 +409,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test table invoke orm.
-     */
     @Test
     public void TestTableActionOrm() {
         preInit();
@@ -511,9 +433,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(6, t.action);
     }
 
-    /**
-     * Test insert update.
-     */
     @Test
     public void TestInsertUpdate() {
         preInit();
@@ -557,9 +476,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test insert update 2.
-     */
     @Test
     public void TestInsertUpdate2() {
         preInit();
@@ -603,9 +519,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test big decimal.
-     */
     @Test
     public void TestBigDecimal() {
         preInit();
@@ -633,9 +546,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test date time.
-     */
     @Test
     public void TestDateTime() {
         preInit();
@@ -659,9 +569,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test byte array.
-     */
     @Test
     public void TestByteArray() {
         preInit();
@@ -703,9 +610,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test byte array 2.
-     */
     @Test
     public void TestByteArray2() {
         preInit();
@@ -753,9 +657,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test int array.
-     */
     @Test
     public void TestIntArray() {
         preInit();
@@ -783,9 +684,6 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test int array bulk null.
-     */
     @Test
     public void TestIntArrayBulkNull() {
         preInit();
@@ -803,9 +701,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test int array bulk null 2.
-     */
     @Test
     public void TestIntArrayBulkNull2() {
         preInit();
@@ -823,9 +718,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test int array bulk not null.
-     */
     @Test
     public void TestIntArrayBulkNotNull() {
         preInit();
@@ -849,9 +741,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(4, o.aBytes22[3]);
     }
 
-    /**
-     * Test int array bulk not null 2.
-     */
     @Test
     public void TestIntArrayBulkNotNull2() {
         preInit();
@@ -875,9 +764,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(4, (int) o.aBytes22[3]);
     }
 
-    /**
-     * Test int array 2.
-     */
     @Test
     public void TestIntArray2() {
         preInit();
@@ -903,9 +789,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(4, (int) o.aBytes22[3]);
     }
 
-    /**
-     * Test long array.
-     */
     @Test
     public void TestLongArray() {
         preInit();
@@ -931,9 +814,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(4, o.aBytes22[3]);
     }
 
-    /**
-     * Test long array bulk null.
-     */
     @Test
     public void TestLongArrayBulkNull() {
         preInit();
@@ -951,9 +831,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test long array bulk null 2.
-     */
     @Test
     public void TestLongArrayBulkNull2() {
         preInit();
@@ -972,9 +849,6 @@ public class TestMethod extends BaseTestClass {
     }
 
 
-    /**
-     * Test long array 2.
-     */
     @Test
     public void TestLongArray2() {
         preInit();
@@ -1001,9 +875,6 @@ public class TestMethod extends BaseTestClass {
     }
 
 
-    /**
-     * Test long bulk value.
-     */
     @Test
     public void TestLongBulkValue() {
         preInit();
@@ -1025,9 +896,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(4L, o.aBytes22[3]);
     }
 
-    /**
-     * Test long bulk value 2.
-     */
     @Test
     public void TestLongBulkValue2() {
         preInit();
@@ -1049,9 +917,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(4L, (long) o.aBytes22[3]);
     }
 
-    /**
-     * Test double array insert bulk null.
-     */
     /* ----------------------------- double_____________________*/
     @Test
     public void TestDoubleArrayInsertBulkNull() {
@@ -1069,9 +934,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test double array insert bulk not null.
-     */
     @Test
     public void TestDoubleArrayInsertBulkNotNull() {
         preInit();
@@ -1090,9 +952,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(1.2D, o.aBytes22[1], 0.0);
     }
 
-    /**
-     * Test double array insert bulk null 2.
-     */
     @Test
     public void TestDoubleArrayInsertBulkNull2() {
         preInit();
@@ -1109,9 +968,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test double array insert bulk not null 2.
-     */
     @Test
     public void TestDoubleArrayInsertBulkNotNull2() {
         preInit();
@@ -1130,9 +986,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(1.2D, o.aBytes22[1], 0.0);
     }
 
-    /**
-     * /////////////////////////////////////////////////////////////
-     */
     @Test
     public void TestDoubleArrayInsertNull() {
         preInit();
@@ -1149,9 +1002,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test double array insert not null.
-     */
     @Test
     public void TestDoubleArrayInsertNotNull() {
         preInit();
@@ -1170,9 +1020,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(1.2D, o.aBytes22[1], 0.0);
     }
 
-    /**
-     * Test double array insert null 2.
-     */
     @Test
     public void TestDoubleArrayInsertNull2() {
         preInit();
@@ -1189,9 +1036,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test double array insert not null 2.
-     */
     @Test
     public void TestDoubleArrayInsertNotNull2() {
         preInit();
@@ -1211,9 +1055,6 @@ public class TestMethod extends BaseTestClass {
     }
     /*---------------------------------------float___________________________*/
 
-    /**
-     * Test float array insert bulk null.
-     */
     @Test
     public void TestFloatArrayInsertBulkNull() {
         preInit();
@@ -1230,9 +1071,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test float array insert bulk not null.
-     */
     @Test
     public void TestFloatArrayInsertBulkNotNull() {
         preInit();
@@ -1251,9 +1089,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(1.2F, o.aBytes22[1], 0.0);
     }
 
-    /**
-     * Test float array insert bulk null 2.
-     */
     @Test
     public void TestFloatArrayInsertBulkNull2() {
         preInit();
@@ -1270,9 +1105,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test float array insert bulk not null 2.
-     */
     @Test
     public void TestFloatArrayInsertBulkNotNull2() {
         preInit();
@@ -1291,9 +1123,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(1.2F, o.aBytes22[1], 0.0);
     }
 
-    /**
-     * //////////////////////////////////////// insert/////////////////////////////////
-     */
     @Test
     public void TestFloatArrayInsertNull() {
         preInit();
@@ -1310,9 +1139,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test float array insert not null.
-     */
     @Test
     public void TestFloatArrayInsertNotNull() {
         preInit();
@@ -1331,9 +1157,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(1.2F, o.aBytes22[1], 0.0);
     }
 
-    /**
-     * Test float array insert null 2.
-     */
     @Test
     public void TestFloatArrayInsertNull2() {
         preInit();
@@ -1350,9 +1173,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test float array insert not null 2.
-     */
     @Test
     public void TestFloatArrayInsertNotNull2() {
         preInit();
@@ -1372,9 +1192,6 @@ public class TestMethod extends BaseTestClass {
     }
     /*___________________________________bool___________________________________*/
 
-    /**
-     * Test short array insert bulk null.
-     */
     @Test
     public void TestShortArrayInsertBulkNull() {
         preInit();
@@ -1391,9 +1208,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test short array insert bulk not null.
-     */
     @Test
     public void TestShortArrayInsertBulkNotNull() {
         preInit();
@@ -1412,9 +1226,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(2, o.aBytes22[1]);
     }
 
-    /**
-     * Test short array insert bulk null 2.
-     */
     @Test
     public void TestShortArrayInsertBulkNull2() {
         preInit();
@@ -1431,9 +1242,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test short array insert bulk not null 2.
-     */
     @Test
     public void TestShortArrayInsertBulkNotNull2() {
         preInit();
@@ -1452,9 +1260,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(2, (short) o.aBytes22[1]);
     }
 
-    /**
-     * ///////////////////////////////////insert///////////////////////////////////////
-     */
     @Test
     public void TestShortArrayInsertNull() {
         preInit();
@@ -1471,9 +1276,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test short array insert not null.
-     */
     @Test
     public void TestShortArrayInsertNotNull() {
         preInit();
@@ -1492,9 +1294,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals(2, o.aBytes22[1]);
     }
 
-    /**
-     * Test short array insert null 2.
-     */
     @Test
     public void TestShortArrayInsertNull2() {
         preInit();
@@ -1511,9 +1310,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test short array insert not null 2.
-     */
     @Test
     public void TestShortArrayInsertNotNull2() {
         preInit();
@@ -1533,9 +1329,6 @@ public class TestMethod extends BaseTestClass {
     }
     /*---------------------------------stringArray-----------------------*/
 
-    /**
-     * Test string array insert bulk null.
-     */
     @Test
     public void TestStringArrayInsertBulkNull() {
         preInit();
@@ -1552,9 +1345,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test string array insert bulk not null.
-     */
     @Test
     public void TestStringArrayInsertBulkNotNull() {
         preInit();
@@ -1574,9 +1364,6 @@ public class TestMethod extends BaseTestClass {
         assertEquals("2", o.aBytes22[1]);
     }
 
-    /**
-     * Test string array insert null.
-     */
     @Test
     public void TestStringArrayInsertNull() {
         preInit();
@@ -1593,9 +1380,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test string array insert not null.
-     */
     @Test
     public void TestStringArrayInsertNotNull() {
         preInit();
@@ -1620,9 +1404,6 @@ public class TestMethod extends BaseTestClass {
 
     /*___________________________________bool___________________________________*/
 
-    /**
-     * Test boolean array insert bulk null.
-     */
     @Test
     public void TestBooleanArrayInsertBulkNull() {
         preInit();
@@ -1639,9 +1420,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test boolean array insert bulk not null.
-     */
     @Test
     public void TestBooleanArrayInsertBulkNotNull() {
         preInit();
@@ -1656,13 +1434,10 @@ public class TestMethod extends BaseTestClass {
         o.aBytes22 = new boolean[]{true, true};
         session.insertBulk(o);
         o = session.firstOrDefault(TableBooleanArray.class, null);
-        assertTrue(o.aBytes22[0] );
+        assertTrue(o.aBytes22[0]);
         assertTrue(o.aBytes22[1]);
     }
 
-    /**
-     * Test boolean array insert bulk null 2.
-     */
     @Test
     public void TestBooleanArrayInsertBulkNull2() {
         preInit();
@@ -1679,9 +1454,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test boolean array insert bulk not null 2.
-     */
     @Test
     public void TestBooleanArrayInsertBulkNotNull2() {
         preInit();
@@ -1700,9 +1472,6 @@ public class TestMethod extends BaseTestClass {
         assertTrue(o.aBytes22[1]);
     }
 
-    /**
-     * ///////////////////////////////////insert///////////////////////////////////////
-     */
     @Test
     public void TestBooleanArrayInsertNull() {
         preInit();
@@ -1719,9 +1488,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test boolean array insert not null.
-     */
     @Test
     public void TestBooleanArrayInsertNotNull() {
         preInit();
@@ -1736,13 +1502,10 @@ public class TestMethod extends BaseTestClass {
         o.aBytes22 = new boolean[]{true, true};
         session.insert(o);
         o = session.firstOrDefault(TableBooleanArray.class, null);
-        assertTrue(o.aBytes22[0] );
+        assertTrue(o.aBytes22[0]);
         assertTrue(o.aBytes22[1]);
     }
 
-    /**
-     * Test boolean array insert null 2.
-     */
     @Test
     public void TestBooleanArrayInsertNull2() {
         preInit();
@@ -1759,9 +1522,6 @@ public class TestMethod extends BaseTestClass {
         assertNull(o.aBytes22);
     }
 
-    /**
-     * Test boolean array insert not null 2.
-     */
     @Test
     public void TestBooleanArrayInsertNotNull2() {
         preInit();
@@ -1780,11 +1540,8 @@ public class TestMethod extends BaseTestClass {
         assertTrue(o.aBytes22[1]);
     }
 
-    /**
-     * Test update all.
-     */
     @Test
-    public void TestUpdateAll(){
+    public void TestUpdateAll() {
         preInit();
         ISession session = Configure.getSession();
         try {
@@ -1793,50 +1550,47 @@ public class TestMethod extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        for (int i = 0; i <5; i++) {
+        for (int i = 0; i < 5; i++) {
             session.insert(new TableUpdateAll());
         }
-       var res= session.updateRows(TableUpdateAll.class,new PairColumnValue().
-               put("name1","name1").
-               put("name2","name2")
-               .put("integer1",10)
-               .put("integer2",null)
-               .put("double1",1D)
-               .put("double2",null).
-                put("float1",1F)
-               .put("float2",null)
-               .put("long1",1L)
-               .put("long2",null)
-               .put("ints",new int[]{1,1})
-               .put("integers2",new Integer[]{1,1})
-               .put("integers1",new int[]{1,1})
-               .put("floats1",new float[]{1F,1F})
-               .put("floats2",null)
-               //.put("doubles1",new double[]{1D,1D})
-               .put("doubles2",null)
-               .put("boolean1",true)
-               .put("boolean2",null)
-               .put("booleans1",new boolean[]{true,true})
-               .put("booleans2",null)
-               .put("date1",new Date())
-               .put("date2",null)
-               .put("strings",new String[]{"name1","name2"})
-               .put("bigDecimal1",new BigDecimal("111111111"))
-               .put("bigDecimal2",null)
+        var res = session.updateRows(TableUpdateAll.class, new PairColumnValue().
+                        put("name1", "name1").
+                        put("name2", "name2")
+                        .put("integer1", 10)
+                        .put("integer2", null)
+                        .put("double1", 1D)
+                        .put("double2", null).
+                        put("float1", 1F)
+                        .put("float2", null)
+                        .put("long1", 1L)
+                        .put("long2", null)
+                        .put("ints", new int[]{1, 1})
+                        .put("integers2", new Integer[]{1, 1})
+                        .put("integers1", new int[]{1, 1})
+                        .put("floats1", new float[]{1F, 1F})
+                        .put("floats2", null)
+                        //.put("doubles1",new double[]{1D,1D})
+                        .put("doubles2", null)
+                        .put("boolean1", true)
+                        .put("boolean2", null)
+                        .put("booleans1", new boolean[]{true, true})
+                        .put("booleans2", null)
+                        .put("date1", new Date())
+                        .put("date2", null)
+                        .put("strings", new String[]{"name1", "name2"})
+                        .put("bigDecimal1", new BigDecimal("111111111"))
+                        .put("bigDecimal2", null)
 
-               ," id < ? ",20);
+                , " id < ? ", 20);
         assertEquals(5, res);
-        var o=session.getList(TableUpdateAll.class, "1 =1 order by id");
+        var o = session.getList(TableUpdateAll.class, "1 =1 order by id");
         assertEquals(5, o.size());
 
 
     }
 
-    /**
-     * Test inset new.
-     */
-//@Test
-    public void TestInsetNew(){
+    //@Test
+    public void TestInsetNew() {
 
 
         preInit();
@@ -1849,18 +1603,15 @@ public class TestMethod extends BaseTestClass {
 
 
         }
-        var o=new TableInset();
+        var o = new TableInset();
         for (int i = 0; i < 4000; i++) {
             session.insert(o);
         }
 
     }
 
-    /**
-     * Test inset old.
-     */
-//@Test
-    public void TestInsetOld(){
+    //@Test
+    public void TestInsetOld() {
 
 
         preInit();
@@ -1873,18 +1624,15 @@ public class TestMethod extends BaseTestClass {
 
 
         }
-        var o=new TableInset();
+        var o = new TableInset();
         for (int i = 0; i < 4000; i++) {
             session.insert(o);
         }
 
     }
 
-    /**
-     * Test inset bulk time.
-     */
     @Test
-    public void TestInsetBulkTime(){
+    public void TestInsetBulkTime() {
 
 
         preInit();
@@ -1897,7 +1645,7 @@ public class TestMethod extends BaseTestClass {
 
 
         }
-        List<TableInset> list=new ArrayList<>(4000);
+        List<TableInset> list = new ArrayList<>(4000);
 
         for (int i = 0; i < 40; i++) {
             list.add(new TableInset());
@@ -1906,11 +1654,8 @@ public class TestMethod extends BaseTestClass {
 
     }
 
-    /**
-     * Test update core.
-     */
     @Test
-    public void TestUpdateCore(){
+    public void TestUpdateCore() {
 
 
         preInit();
@@ -1923,24 +1668,21 @@ public class TestMethod extends BaseTestClass {
 
 
         }
-        var o=new TableInset();
+        var o = new TableInset();
 
         session.insert(o);
 
 
         session.update(o);
-        o=session.firstOrDefault(TableInset.class,null);
+        o = session.firstOrDefault(TableInset.class, null);
         assertNotNull(o.myData);
         assertTrue(true);
 
 
     }
 
-    /**
-     * Test update old.
-     */
-//@Test
-    public void TestUpdateOld(){
+    //@Test
+    public void TestUpdateOld() {
 
 
         preInit();
@@ -1953,20 +1695,17 @@ public class TestMethod extends BaseTestClass {
 
 
         }
-        var o=new TableInset();
+        var o = new TableInset();
         for (int i = 0; i < 4000; i++) {
             session.insert(o);
         }
-        var list=session.getList(TableInset.class);
+        var list = session.getList(TableInset.class);
         list.forEach(session::update);
 
     }
 
-    /**
-     * Test update new.
-     */
     @Test
-    public void TestUpdateNew(){
+    public void TestUpdateNew() {
 
 
         preInit();
@@ -1979,34 +1718,26 @@ public class TestMethod extends BaseTestClass {
 
 
         }
-        var o=new TableInset();
-        o.name="111'111";
+        var o = new TableInset();
+        o.name = "111'111";
         session.insert(o);
-        session.update(session.firstOrDefault(TableInset.class,null));
+        session.update(session.firstOrDefault(TableInset.class, null));
 
 
-        var list=session.getList(TableInset.class);
+        var list = session.getList(TableInset.class);
 
         assertEquals("111'111", list.get(0).name);
 
     }
 
-    /**
-     * Test create table.
-     */
     @Test
-    public void TestCreateTable(){
+    public void TestCreateTable() {
         preInit();
         ISession session = Configure.getSession();
-        var ee=Configure.getSqlCreateTable(MyTable.class,true);
+        var ee = Configure.getSqlCreateTable(MyTable.class, true);
         assertTrue(true);
     }
 
-    /**
-     * Test not insert update all.
-     *
-     * @throws IOException the io exception
-     */
     @Test
     public void TestNotInsertUpdateAll() throws IOException {
         preInit();
@@ -2020,14 +1751,14 @@ public class TestMethod extends BaseTestClass {
                 tableNotInsert.age = 34;
                 session.insert(tableNotInsert);
                 var t = session.first(TableNotInsert.class, null);
-                session.updateRows(TableNotInsert.class,new PairColumnValue()
-                        .put("name","111")
-                        .put("age",100),null);
+                session.updateRows(TableNotInsert.class, new PairColumnValue()
+                        .put("name", "111")
+                        .put("age", 100), null);
                 t = session.first(TableNotInsert.class, null);
                 assertEquals("SIMPLE", t.name);
                 assertEquals(100, t.age);
-                t.name="1212";
-                t.age=0;
+                t.name = "1212";
+                t.age = 0;
                 session.update(t);
                 t = session.first(TableNotInsert.class, "1");
                 assertEquals("SIMPLE", t.name);
@@ -2039,30 +1770,18 @@ public class TestMethod extends BaseTestClass {
     }
 
 
-    /**
-     * The type Table list.
-     */
     @MapTable
-    static class TableList{
-        /**
-         * The Id.
-         */
+    static class TableList {
         @MapPrimaryKey
 
         public int id;
 
-        /**
-         * The List.
-         */
         @MapColumn
-        public List<Object> list=new ArrayList<>();
+        public List<Object> list = new ArrayList<>();
     }
 
-    /**
-     * Test list.
-     */
     @Test
-    public void TestList(){
+    public void TestList() {
         preInit();
         ISession session = Configure.getSession();
         session.dropTableIfExists(TableList.class);
@@ -2071,75 +1790,51 @@ public class TestMethod extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        TableList list=new TableList();
+        TableList list = new TableList();
         list.list.add(3);
         session.insert(list);
-        var o=session.getList(TableList.class);
-        assertEquals(3,o.get(0).list.get(0));
+        var o = session.getList(TableList.class);
+        assertEquals(3, o.get(0).list.get(0));
     }
 
-    /**
-     * The type Table list json.
-     */
     @MapTable
-    static class TableListJson {
-        /**
-         * The Id.
-         */
+    static class tableListJson {
         @MapPrimaryKey
 
         public int id;
 
-        /**
-         * The List.
-         */
         @MapColumn
-        public List<Integer> list=new ArrayList<>();
+        public List<Integer> list = new ArrayList<>();
     }
 
-    /**
-     * Test list join.
-     */
     @Test
-    public void TestListJoin(){
+    public void TestListJoin() {
         preInit();
         ISession session = Configure.getSession();
-        session.dropTableIfExists(TableListJson.class);
+        session.dropTableIfExists(tableListJson.class);
         try {
-            session.createTableIfNotExists(TableListJson.class);
+            session.createTableIfNotExists(tableListJson.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        TableListJson list=new TableListJson();
+        tableListJson list = new tableListJson();
         list.list.add(3);
         session.insert(list);
-        var o=session.firstOrDefault(TableListJson.class,null);
+        var o = session.firstOrDefault(tableListJson.class, null);
 
-        assertEquals(3,(int)o.list.get(0));
+        assertEquals(3, (int) o.list.get(0));
     }
 
-    /**
-     * The type Table list map.
-     */
     @MapTable
     static class TableListMap {
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
         public int id;
-        /**
-         * The List.
-         */
         @MapColumn
-        public Map<String,Integer> list=new HashMap<>();
+        public Map<String, Integer> list = new HashMap<>();
     }
 
-    /**
-     * Test map.
-     */
     @Test
-    public void TestMap(){
+    public void TestMap() {
         preInit();
         ISession session = Configure.getSession();
         session.dropTableIfExists(TableListMap.class);
@@ -2148,76 +1843,52 @@ public class TestMethod extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        TableListMap list=new TableListMap();
-        list.list.put("assa",3);
+        TableListMap list = new TableListMap();
+        list.list.put("assa", 3);
         session.insert(list);
-        var o=session.firstOrDefault(TableListMap.class,null);
+        var o = session.firstOrDefault(TableListMap.class, null);
 
-        assertEquals(3,(int)o.list.get("assa"));
+        assertEquals(3, (int) o.list.get("assa"));
     }
 
-    /**
-     * The type Table set.
-     */
     @MapTable
-    static class TableSet {
-        /**
-         * The Id.
-         */
+    static class tableSet {
         @MapPrimaryKey
         public int id;
-        /**
-         * The List.
-         */
         @MapColumn
-        public Set<String> list=new HashSet<>();
+        public Set<String> list = new HashSet<>();
     }
 
-    /**
-     * Tes set.
-     */
     @Test
-    public void TesSet(){
+    public void TesSet() {
         preInit();
         ISession session = Configure.getSession();
-        session.dropTableIfExists(TableSet.class);
+        session.dropTableIfExists(tableSet.class);
         try {
-            session.createTableIfNotExists(TableSet.class);
+            session.createTableIfNotExists(tableSet.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        TableSet list=new TableSet();
+        tableSet list = new tableSet();
         list.list.add("assa");
         session.insert(list);
-        var o=session.firstOrDefault(TableSet.class,null);
+        var o = session.firstOrDefault(tableSet.class, null);
 
 
-        assertEquals(true,o.list.contains("assa"));
+        assertTrue(o.list.contains("assa"));
     }
 
 
-    /**
-     * The type Table big decimal 2.
-     */
     @MapTable
     static class TableBigDecimal2 {
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
         public int id;
-        /**
-         * The List.
-         */
         @MapColumn
-        public BigDecimal list=new BigDecimal("11");
+        public BigDecimal list = new BigDecimal("11");
     }
 
-    /**
-     * Tes big decimal.
-     */
     @Test
-    public void TesBigDecimal(){
+    public void TesBigDecimal() {
         preInit();
         ISession session = Configure.getSession();
         session.dropTableIfExists(TableBigDecimal2.class);
@@ -2226,37 +1897,25 @@ public class TestMethod extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        TableBigDecimal2 list=new TableBigDecimal2();
+        TableBigDecimal2 list = new TableBigDecimal2();
 
         session.insert(list);
-        var o=session.firstOrDefault(TableBigDecimal2.class,null);
+        var o = session.firstOrDefault(TableBigDecimal2.class, null);
 
 
-        assertEquals("11",o.list.toString());
+        assertEquals("11", o.list.toString());
     }
 
-    /**
-     * The type Table uuid.
-     */
     @MapTable
     static class TableUUID {
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
         public int id;
-        /**
-         * The List.
-         */
         @MapColumn
-        public UUID list=UUID.randomUUID();
+        public UUID list = UUID.randomUUID();
     }
 
-    /**
-     * Tes uuid.
-     */
     @Test
-    public void TesUUID(){
+    public void TesUUID() {
         preInit();
         ISession session = Configure.getSession();
         session.dropTableIfExists(TableUUID.class);
@@ -2265,30 +1924,21 @@ public class TestMethod extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        TableUUID list=new TableUUID();
+        TableUUID list = new TableUUID();
 
         session.insert(list);
-        var o=session.firstOrDefault(TableUUID.class,null);
+        var o = session.firstOrDefault(TableUUID.class, null);
 
 
-        assertEquals(list.list.toString(),o.list.toString());
+        assertEquals(list.list.toString(), o.list.toString());
     }
 
-    /**
-     * The type Table externalizable.
-     */
     @MapTable
     static class TableExternalizable implements Externalizable {
-        /**
-         * The Id.
-         */
         @MapPrimaryKey
         public int id;
-        /**
-         * The Name.
-         */
         @MapColumn
-        public   String name;
+        public String name;
 
         @Override
         public void readExternal(ObjectInput in) throws ClassNotFoundException, IOException {
@@ -2303,11 +1953,8 @@ public class TestMethod extends BaseTestClass {
         }
     }
 
-    /**
-     * Tes externalizable.
-     */
     @Test
-    public void TesExternalizable(){
+    public void TesExternalizable() {
         preInit();
         ISession session = Configure.getSession();
         session.dropTableIfExists(TableExternalizable.class);
@@ -2316,29 +1963,26 @@ public class TestMethod extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        TableExternalizable ext =new TableExternalizable();
-        ext.name="simple";
-        ext.id=1000;
+        TableExternalizable ext = new TableExternalizable();
+        ext.name = "simple";
+        ext.id = 1000;
 
 
         session.insert(ext);
 
-        var o=session.firstOrDefault(TableExternalizable.class,null);
+        var o = session.firstOrDefault(TableExternalizable.class, null);
 
 
-        assertNotNull(o.id==1000);
+        assertNotNull(o.id == 1000);
     }
 
 
-    /**
-     * The type Table enum.
-     */
     @MapTable
-    static class TableEnum{
+    static class TableEnum {
         @MapPrimaryKey
-        UUID uuid=UUID.randomUUID();
+        UUID uuid = UUID.randomUUID();
         @MapColumn
-        private int ee=3;
+        private final int ee = 3;
 
         @MapColumn
         @MapColumnType("DATE DEFAULT CURRENT_TIMESTAMP")
@@ -2346,11 +1990,8 @@ public class TestMethod extends BaseTestClass {
         public Date dateCreate;
     }
 
-    /**
-     * Test enum.
-     */
     @Test
-    public void TestEnum(){
+    public void TestEnum() {
 
         preInit();
         ISession session = Configure.getSession();
@@ -2360,19 +2001,19 @@ public class TestMethod extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        List<TableEnum>  list=new ArrayList<>();
-        for (int i = 0; i <10; i++) {
+        List<TableEnum> list = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
             list.add(new TableEnum());
 
         }
         session.insertBulk(list);
 
-        var o=session.firstOrDefault(TableEnum.class,null);
+        var o = session.firstOrDefault(TableEnum.class, null);
         //assertEquals(Level.HIGH,o.level);
     }
 
     @Test
-    public void TestDemo(){
+    public void TestDemo() {
 
         preInit();
         ISession session = Configure.getSession();
@@ -2383,22 +2024,23 @@ public class TestMethod extends BaseTestClass {
             throw new RuntimeException(e);
         }
         session.insertBulk(new TableDemo());
-        var o=session.firstOrDefault(TableDemo.class,null);
-        assertTrue(o.string.equals("name"));
-        o.string="name1";
+        var o = session.firstOrDefault(TableDemo.class, null);
+        assertEquals("name", o.string);
+        o.string = "name1";
         session.update(o);
-        o=session.firstOrDefault(TableDemo.class,null);
-        assertTrue(o.string.equals("name1"));
-        session.updateRows(TableDemo.class,new PairColumnValue()
-                .put("string","name2").put("aByte",123),null);
-        o=session.firstOrDefault(TableDemo.class,null);
-        assertTrue(o.string.equals("name2"));
-        assertTrue(o.aByte==123);
-        var ee=o.demoJson.name;
-        assertTrue(ee.equals("name"));
+        o = session.firstOrDefault(TableDemo.class, null);
+        assertEquals("name1", o.string);
+        session.updateRows(TableDemo.class, new PairColumnValue()
+                .put("string", "name2").put("aByte", 123), null);
+        o = session.firstOrDefault(TableDemo.class, null);
+        assertEquals("name2", o.string);
+        assertEquals(123, o.aByte);
+        var ee = o.demoJson.name;
+        assertEquals("name", ee);
     }
+
     @Test
-    public void TestUpdate(){
+    public void TestUpdate() {
         preInit();
 
         ISession session = Configure.getSession();
@@ -2409,16 +2051,17 @@ public class TestMethod extends BaseTestClass {
             throw new RuntimeException(e);
         }
         session.insertBulk(new TableDemo());
-        var o=session.firstOrDefault(TableDemo.class,null);
-        var i=session.update(o);
-        assertTrue(1==i);
-        o.id=UUID.randomUUID();
+        var o = session.firstOrDefault(TableDemo.class, null);
+        var i = session.update(o);
+        assertEquals(1, i);
+        o.id = UUID.randomUUID();
 
-        i=session.update(o);
-        assertTrue(0==i);
+        i = session.update(o);
+        assertEquals(0, i);
     }
+
     @Test
-    public void TestDelete2(){
+    public void TestDelete2() {
         preInit();
 
         ISession session = Configure.getSession();
@@ -2429,16 +2072,17 @@ public class TestMethod extends BaseTestClass {
             throw new RuntimeException(e);
         }
         session.insertBulk(new TableDemo());
-        var o=session.firstOrDefault(TableDemo.class,null);
-        var i=session.delete(o);
-        assertTrue(1==i);
-        o.id=UUID.randomUUID();
+        var o = session.firstOrDefault(TableDemo.class, null);
+        var i = session.delete(o);
+        assertEquals(1, i);
+        o.id = UUID.randomUUID();
 
-        i=session.delete(o);
-        assertTrue(0==i);
+        i = session.delete(o);
+        assertEquals(0, i);
     }
+
     @Test
-    public void TestListySelect(){
+    public void TestListySelect() {
         preInit();
 
         ISession session = Configure.getSession();
@@ -2449,8 +2093,229 @@ public class TestMethod extends BaseTestClass {
             throw new RuntimeException(e);
         }
         session.insertBulk(new TableDemo());
-        var o=session.getListSelect(TableDemo.class,"string",null);
-        assertTrue(o.size()==1);
+        var o = session.getListSelect(TableDemo.class, "string", null);
+        assertEquals(1, o.size());
+
+    }
+
+    static class Children implements Serializable {
+        public String name = "Leo";
+        public int age = 3;
+    }
+
+    static class ExternalizableDemo implements Externalizable {
+        public String firstName = "ion";
+        public String lastName = "Ionow";
+        public int age = 18;
+
+        public ExternalizableDemo() {
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            if (in.readBoolean()) {
+                firstName = in.readUTF();
+            }
+            if (in.readBoolean()) {
+                lastName = in.readUTF();
+            }
+            age = in.readInt();
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            if (firstName == null) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                out.writeUTF(firstName);
+            }
+            if (lastName == null) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                out.writeUTF(lastName);
+            }
+            out.writeInt(age);
+        }
+    }
+
+    @MapTableName("ny_table")
+    static class MyUser {
+        @MapPrimaryKey
+        public long id;
+        @MapColumn
+        public String name = "simple";
+        @MapColumn
+        public int age = 15;
+        @MapColumn
+        public String email = "ion@df.com";
+        @MapColumn
+        public List<Children> childrenList = new ArrayList<>();
+
+        @MapColumn
+        public ExternalizableDemo externalizable;
+    }
+
+    @Test
+    public void TestSingleOK() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insertBulk(new MyUser());
+        MyUser o = null;
+        try {
+            o = session.single(MyUser.class, null);
+        } catch (Exception e) {
+            throw new RuntimeException();
+        }
+        assertTrue(true);
+    }
+
+    @Test
+    public void TestSingleNotOK() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insertBulk(new MyUser(), new MyUser());
+
+        try {
+            MyUser o = session.single(MyUser.class, null);
+        } catch (Exception e) {
+            assertTrue(true);
+            return;
+        }
+        fail();
+
+    }
+
+    @Test
+    public void TestFirstOK() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insertBulk(new MyUser());
+
+        try {
+            MyUser o = session.first(MyUser.class, null);
+        } catch (Exception e) {
+            throw new RuntimeException();
+        }
+        assertTrue(true);
+    }
+
+    @Test
+    public void TestFirstNotOK() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insertBulk(new MyUser(), new MyUser());
+        try {
+            MyUser o = session.single(MyUser.class, "name=?", "asas");
+        } catch (Exception e) {
+            assertTrue(true);
+            return;
+        }
+        fail();
+
+    }
+
+    @Test
+    public void TestGroupBy() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insertBulk(new MyUser(), new MyUser());
+
+
+        var map = session.groupBy(MyUser.class, "name", null);
+        assertEquals(1, map.size());
+        assertEquals(2, map.get("simple").size());
+    }
+
+    @Test
+    public void TestSelect() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insertBulk(new MyUser(), new MyUser());
+
+
+        var list = session.getListSelect(MyUser.class, "name", null);
+        assertEquals(2, list.size());
+
+    }
+
+    @Test
+    public void TestDistinct() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insertBulk(new MyUser(), new MyUser());
+        var list = session.distinctBy(MyUser.class, "name", null);
+        assertEquals(1, list.size());
+
+    }
+
+    @Test
+    public void DemoSerialise() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyUser.class);
+        try {
+            session.createTableIfNotExists(MyUser.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        var table = new MyUser();
+        table.childrenList.add(new Children());
+        table.externalizable = new ExternalizableDemo();
+
+        session.insert(table);
+        var list = session.getList(MyUser.class);
+        list.forEach(myTable1 -> {
+            myTable1.childrenList.forEach(children -> {
+                Log.i("------------", children.name + "@" + children.age);
+            });
+            Log.i("------------", myTable1.externalizable.firstName + "@" + myTable1.externalizable.lastName + "@" + myTable1.externalizable.age);
+        });
+        assertEquals(1, list.size());
+        assertEquals(1L, list.get(0).id);
 
     }
 

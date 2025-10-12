@@ -12,11 +12,15 @@ class CacheMetaData<T> {
     public ItemField keyColumn = null;
     String tableName = null;
 
+    boolean isPersistent;
+
     String tableNameRaw = null;
     String where = null;
     String appendCreateTable = null;
     boolean isIAction = false;
     private String[] listSelectColumns = null;
+
+
 
 
     public CacheMetaData(Class<T> aClass) {
@@ -25,6 +29,8 @@ class CacheMetaData<T> {
 
     private void SetClass(Class tClass) {
 
+
+        isPersistent = isRecursiveSubclassOf(tClass);
         if (tableName == null) {
             tableName = Utils.clearStringTrim(AnnotationOrm.getTableName(tClass));
         }
@@ -63,5 +69,17 @@ class CacheMetaData<T> {
     }
     public String[] getStringSelect() {
         return listSelectColumns;
+    }
+
+    public static boolean isRecursiveSubclassOf( Class<?> parentClass) {
+
+        Class<?> currentClass = parentClass.getSuperclass();
+        while (currentClass != null) {
+            if (currentClass.equals(Persistent.class)) {
+                return true; // Найден родительский класс
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        return false; // Родительский класс не найден
     }
 }
