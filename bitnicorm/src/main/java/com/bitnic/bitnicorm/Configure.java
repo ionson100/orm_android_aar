@@ -429,6 +429,34 @@ public class Configure implements ISession {
     }
 
     @Override
+    public <T> void cursorIterator(@NonNull Class<T> aClass, @NonNull IAction<T> callback, String where, Object... objects) {
+        CacheMetaData<T> d = getCacheMetaData(aClass);
+        where = whereBuilder(where, d);
+        Cursor cursor = null;
+        try {
+            String sql = SelectBuilder.getSql(d, where);
+            cursor = execSQLRaw(sql, objects);
+
+            if (cursor.moveToFirst()) {
+                do {
+                    T sd = aClass.newInstance();
+                    if(d.isPersistent){
+                        ((Persistent)sd).isPersistent=true;
+                    }
+                    callback.invoke(sd);
+                    Compound(d.listColumn, d.keyColumn, cursor, sd);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    @Override
     public <T> T firstOrDefault(@NonNull Class<T> aClass, String where, Object... objects) {
         Cursor cursor = null;
         CacheMetaData<T> d = getCacheMetaData(aClass);

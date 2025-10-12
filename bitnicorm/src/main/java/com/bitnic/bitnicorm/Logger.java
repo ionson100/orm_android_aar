@@ -13,17 +13,11 @@ import android.util.Log;
 import java.lang.reflect.Field;
 
 
-/**
- * The type Logger.
- */
 class Logger {
+
+    private Logger(){}
     private final static boolean isWrite = Configure.IsWriteLog;
 
-    /**
-     * Log e.
-     *
-     * @param msg the msg
-     */
     static  void  LogE(String msg) {
         if (isWrite) {
             Log.e("____ORM____", msg);
@@ -31,11 +25,6 @@ class Logger {
 
     }
 
-    /**
-     * Log i.
-     *
-     * @param msg the msg
-     */
     static  void LogI(String msg) {
         if (isWrite) {
             Log.i("____ORM____", msg);
@@ -43,11 +32,6 @@ class Logger {
 
     }
 
-    /**
-     * Print sql.
-     *
-     * @param cursor the cursor
-     */
     static  void printSql(Cursor cursor) {
         if (isWrite) {
             try {

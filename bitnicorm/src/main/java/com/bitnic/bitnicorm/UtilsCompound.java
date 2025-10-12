@@ -10,6 +10,8 @@ import java.util.UUID;
 
 class UtilsCompound {
 
+    private UtilsCompound(){}
+
     @SuppressLint("Range")
     public static void Compound(List<ItemField> listIf, ItemField key, Cursor cursor, Object o) {
         for (ItemField str : listIf) {

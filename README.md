@@ -480,6 +480,26 @@ int count = list.size();
 > Внимание: Если вы не хотите пользоваться параметром where, поставьте null, \
 > если все же нужно, но не надо учитывать where, поставьте 1 и пишите условие дальше.
 
+
+####  < T > void cursorIterator(@NonNull Class<T> aClass,@NonNull IAction<T> callback, String where, Object... objects)
+Если вы не желаете получать результирующий список, вы можете обработать результат выборки по месту, обход курсора, передав
+функцию обратного вызова. \
+Пример, как получить список.
+```javas
+
+ISession session = Configure.getSession();
+for (int i = 0; i <  10 ; i++) {
+   MyTable t=new MyTable("name",18);
+   session.insert(t);
+}
+
+List<MyTable> list=new ArrayList<>();
+session.cursorIterator(MyTable.class,table -> {
+    list.add(table);
+    },"name not null order by name");
+assertTrue(list.size()==10);
+```
+
 #### < T, D extends Object > List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects);
 
 Позволяет получить список одиночных значений по определенному полю. \
@@ -539,6 +559,36 @@ List<Integer> list = session.distinctBy(MyTable.class,"age","age > ?  order by a
 ```java
 ISession session = Configure.getSession;
 Map<Integer>,List<MyTable>>   result = session.groupBy(MyTable.class,"age",null);
+```
+#### Object executeScalar(@NonNull String sql, Object... objects);
+#### Object executeScalar(@NonNull String sql);
+Это типовые функции, которые есть в любой ОРМ, возвращают одиночное значение запакованное в Object. \
+Кто в теме, это первая строка курсора с индексом колонки 0.
+```javas
+ISession session = Configure.getSession();
+String sql="Select count (*)  from "+session.getTableName(MyTable.class);
+int count= (int) session.executeScalar(sql);
+```
+ISession session = Configure.getSession;
+
+#### void executeSQL(@NonNull String sql, Object... objects);
+
+Это типовая функция, которая  есть в любой ОРМ, просто выполняет запрос и не возвращает результат, можно применять параметры. \
+как правило применяется при старте приложения, после инициализации конфигурации, или после создания таблицы.
+```javas
+ISession session = Configure.getSession();
+session.executeSQL("CREATE INDEX IF NOT EXISTS test_name ON 'MyTable' ('name');",null);
+
+```
+
+#### < T > boolean any(@NonNull Class<T> aClass, String where, Object... objects);
+#### < T > boolean any(@NonNull Class<T> aClass);
+
+Это типовые функции, которые есть в любой ОРМ, позволяют проверить существуют ли записи в таблице, без условия и с условием.
+```javas
+ISession session = Configure.getSession();
+boolean  b=session.any(MyTable.class," name is null");
+assertFalse(b);
 ```
 
 

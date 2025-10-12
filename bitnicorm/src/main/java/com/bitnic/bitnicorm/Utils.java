@@ -19,6 +19,8 @@ import java.util.Map;
  * ******************************************************************/
 class Utils {
 
+    private Utils(){}
+
     public static String getStringInsert(String tableName,ContentValues contentValues){
         if(Configure.IsWriteLog){
             StringBuilder stringBuilder=new StringBuilder();

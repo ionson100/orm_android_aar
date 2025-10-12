@@ -7,6 +7,8 @@ import java.util.Date;
 
 class UtilsContentValues {
 
+    private UtilsContentValues(){}
+
     public static Object checkFieldValue(Field field, Object item) {
         try {
             Object sd = field.get(item);
