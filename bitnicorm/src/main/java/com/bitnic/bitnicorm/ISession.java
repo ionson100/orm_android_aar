@@ -245,6 +245,42 @@ public interface ISession extends Closeable {
     <T> void cursorIterator(@NonNull Class<T> aClass,@NonNull IAction<T> callback, String where, Object... objects);
 
 
+    /**
+     * An iterator for traversing a Cursor with a callback function
+     * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
+     *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
+     *                 and a public field marked with the primary key annotation.
+     * @param cursor   @see <a href="https://developer.android.com/reference/android/database/Cursor">Cursor</a>
+     * @param function lambda realisation {@link IAction}
+     * @param <T>      The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
+     * <pre>
+     * {@code
+     *
+     * @MapTable
+     * public class SimpleTable {
+     *     public SimpleTable(){}
+     *     public SimpleTable(String name){
+     *         this.myName = name;
+     *     }
+     *     @MapPrimaryKey
+     *     public long id;
+     *     @MapColumnName("name")
+     *     public String myName;
+     * }
+     * ISession session=Configure.getSession();
+     * var cursor=session.execSQLRaw("select "name" from "+session.getTableName(SimpleTable.class));
+     * List<String> stringList=new ArrayList<>();
+     * session.cursorIterator(SimpleTable.class,cursor,o -> {
+     *   stringList.add(o.name);
+     * });
+     *
+     * }
+     *
+     * </pre>
+     */
+    <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> function);
+
+
 
     /**
      * Getting a list of all rows from a database table
@@ -958,40 +994,6 @@ public interface ISession extends Closeable {
      */
     <T, D> List<D> getListSelect(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... objects);
 
-    /**
-     * An iterator for traversing a Cursor with a callback function
-     * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
-     *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
-     *                 and a public field marked with the primary key annotation.
-     * @param cursor   @see <a href="https://developer.android.com/reference/android/database/Cursor">Cursor</a>
-     * @param function lambda realisation {@link IAction}
-     * @param <T>      The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     * <pre>
-     * {@code
-     *
-     * @MapTable
-     * public class SimpleTable {
-     *     public SimpleTable(){}
-     *     public SimpleTable(String name){
-     *         this.myName = name;
-     *     }
-     *     @MapPrimaryKey
-     *     public long id;
-     *     @MapColumnName("name")
-     *     public String myName;
-     * }
-     * ISession session=Configure.getSession();
-     * var cursor=session.execSQLRaw("select "name" from "+session.getTableName(SimpleTable.class));
-     * List<String> stringList=new ArrayList<>();
-     * session.cursorIterator(SimpleTable.class,cursor,o -> {
-     *   stringList.add(o.name);
-     * });
-     *
-     * }
-     *
-     * </pre>
-     */
-    <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> function);
 
     /**
      *Obtaining a dictionary of objects grouped by a database table column, with a selection condition
@@ -1059,4 +1061,5 @@ public interface ISession extends Closeable {
      * @return 1-success , 0 - not success
      */
     <T> int save(@NonNull T item);
+
 }

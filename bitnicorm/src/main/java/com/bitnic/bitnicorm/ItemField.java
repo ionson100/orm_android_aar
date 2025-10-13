@@ -10,7 +10,7 @@ package com.bitnic.bitnicorm;
 
 class ItemField extends ItemFieldBase {
 
-    public Class aClassUserType;
+
     public boolean isIndex;
 
     public String columnType;

@@ -808,6 +808,8 @@ public class Configure implements ISession {
          return update(item);
     }
 
+
+
     <T> ContentValues getInnerContentValuesForUpdate(CacheMetaData<T> data, PairColumnValue columnValues) {
         ContentValues contentValues =  new ContentValues(columnValues.objectMap.size());
         Utils.builderSqlNew(data, contentValues, columnValues.objectMap);

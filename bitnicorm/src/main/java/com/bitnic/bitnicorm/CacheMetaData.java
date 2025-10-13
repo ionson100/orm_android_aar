@@ -4,17 +4,17 @@ package com.bitnic.bitnicorm;
  * Created by OOO Bitnic on 08.02.16   corp@bitnic.ru               *
  * ******************************************************************/
 
+import android.util.Log;
+
 import java.util.List;
+import java.util.Objects;
 
 class CacheMetaData<T> {
 
     public List<ItemField> listColumn = null;
     public ItemField keyColumn = null;
     String tableName = null;
-
     boolean isPersistent;
-
-    String tableNameRaw = null;
     String where = null;
     String appendCreateTable = null;
     boolean isIAction = false;
@@ -27,36 +27,27 @@ class CacheMetaData<T> {
         SetClass(aClass);
     }
 
-    private void SetClass(Class tClass) {
+    private void SetClass(Class<?> tClass) {
 
 
-        isPersistent = isRecursiveSubclassOf(tClass);
-        if (tableName == null) {
-            tableName = Utils.clearStringTrim(AnnotationOrm.getTableName(tClass));
+        isRecursiveSubclassOf(tClass);
+        if(tableName==null||tableName.isEmpty()){
+            throw new RuntimeException("The class does not contain a table name annotation (@MapTableName or MapTable);" +
+                    " such a class cannot be used in ORM.type:"+tClass.getName());
         }
-        tableNameRaw=Utils.clearStringTrimRaw(tableName);
 
-        if (where == null) {
-            where = AnnotationOrm.getWhere(tClass);
-        }
-        if (appendCreateTable == null) {
-            appendCreateTable = AnnotationOrm.getAppendCommand(tClass);
-        }
-        if (keyColumn == null) {
-            keyColumn = AnnotationOrm.getKeyColumnItemField(tClass);
-        }
-        if (listColumn == null) {
-            listColumn = AnnotationOrm.getListItemFieldColumn(tClass);
-        }
-        if (!isIAction) {
+        keyColumn = AnnotationOrm.getKeyColumnItemField(tClass);
 
-            for (Class aClass : tClass.getInterfaces()) {
-                if (aClass == IEventOrm.class) {
-                    isIAction = true;
-                    break;
-                }
-            }
+        if(keyColumn==null||keyColumn.columnName==null||keyColumn.columnName.isEmpty()){
+            throw new RuntimeException("There was a problem defining the primary key, or you did not specify a field with an annotation, " +
+                    "or you tried to specify an empty value in it. type: "+tClass.getName());
         }
+        listColumn = AnnotationOrm.getListItemFieldColumn(tClass);
+
+        if(listColumn==null||listColumn.isEmpty()){
+            Log.w("---ORM WARNING---","Your class is missing fields to associate with table fields.(@MapColumn or @MapColumnName)  type:"+tClass.getName());
+        }
+
         if (listSelectColumns == null) {
             listSelectColumns = new String[listColumn.size() + 1];
             for (int i = 0; i < listColumn.size(); i++) {
@@ -71,15 +62,46 @@ class CacheMetaData<T> {
         return listSelectColumns;
     }
 
-    public static boolean isRecursiveSubclassOf( Class<?> parentClass) {
+    public  void isRecursiveSubclassOf( Class<?> parentClass) {
 
-        Class<?> currentClass = parentClass.getSuperclass();
+        String nameCore=parentClass.getName();
+        Class<?> currentClass = parentClass;
         while (currentClass != null) {
             if (currentClass.equals(Persistent.class)) {
-                return true; // Найден родительский класс
+                isPersistent=true;
             }
+
+            if ((currentClass.isAnnotationPresent(MapTableName.class)||currentClass.isAnnotationPresent(MapTable.class))&&tableName==null) {
+                final MapTableName fName = currentClass.getAnnotation(MapTableName.class);
+                if(fName !=null){
+                    tableName =Utils.clearStringTrim(fName.value());
+                }else{
+                    var name=currentClass.getName();
+                    var index=name.lastIndexOf(".");
+                    if(index!=-1){
+                        tableName=Utils.clearStringTrim(name.substring(index+1));
+                    }else{
+                        tableName=Utils.clearStringTrim(name);
+                    }
+                }
+            }
+
+            if (currentClass.isAnnotationPresent(MapWhere.class)&&where==null) {
+                where = Objects.requireNonNull(currentClass.getAnnotation(MapWhere.class)).value();
+            }
+            if (currentClass.isAnnotationPresent(MapAppendCommandCreateTable.class)) {
+                if(appendCreateTable==null){
+                    appendCreateTable="";
+                }
+                appendCreateTable =appendCreateTable+ Objects.requireNonNull(currentClass.getAnnotation(MapAppendCommandCreateTable.class)).value()+System.lineSeparator();
+            }
+            if(!isIAction){
+                isIAction=IEventOrm.class.isAssignableFrom(currentClass);
+            }
+
+
             currentClass = currentClass.getSuperclass();
         }
-        return false; // Родительский класс не найден
+
     }
 }

@@ -21,20 +21,7 @@ class UtilsCompound {
             res.setAccessible(true);
 
 
-            if (str.isUserType) {
-                IUserType data;
-                try {
-                    data = (IUserType) str.aClassUserType.newInstance();
-                    String sd = cursor.getString(i);
-                    data.initBody(sd);
-                    res.set(o, data);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-
-            } else {
-                extractedSwitch(cursor, o, str, res, i);
-            }
+            extractedSwitch(cursor, o, str, res, i);
         }
         try {
             Field field = key.field;
@@ -75,6 +62,18 @@ class UtilsCompound {
      static void extractedSwitch(Cursor cursor, Object o, ItemFieldBase fieldBase, Field field, int i)  {
         try {
             switch (fieldBase.typeName) {
+
+                case "userType":{
+                    IUserType data;
+                    try {
+                        data = (IUserType) fieldBase.type.getClass().newInstance();
+                        String sd = cursor.getString(i);
+                        data.initBody(sd);
+                        field.set(o, data);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
                 case "int": {
                     if(cursor.isNull(i)){
                         field.setInt(o, 0);

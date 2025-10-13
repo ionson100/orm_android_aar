@@ -2319,5 +2319,131 @@ public class TestMethod extends BaseTestClass {
 
     }
 
+    @MapTable
+    static class TableForIterator{
+        @MapPrimaryKey
+        public int id;
+
+        @MapColumn
+        public Children children;
+
+        @MapColumn
+        public UUID uuid;
+
+        @MapColumn
+        public String name;
+    }
+    static class TableGetter{
+        public Children children;
+        public int id;
+        public UUID uuid;
+        public String name;
+    }
+
+
+    @Test
+    public void TestCursorIterator() {
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(TableForIterator.class);
+
+        try {
+            session.createTableIfNotExists(TableForIterator.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        for (int i = 0; i < 10; i++) {
+            TableForIterator t=new TableForIterator();
+            t.name="simple";
+            t.children=new Children();
+            t.uuid=UUID.randomUUID();
+            session.insert(t);
+        }
+        var cursor = session.execSQLRaw("select * from " + session.getTableName(TableForIterator.class));
+        List<TableGetter> stringList = new ArrayList<>();
+        session.cursorIterator(TableGetter.class, cursor, o -> {
+
+            stringList.add(o);
+        });
+        assertEquals(10, stringList.size());
+        stringList.forEach(s -> {
+            assertEquals("simple", s.name);
+            assertEquals("Leo",s.children.name);
+        });
+    }
+
+
+
+    @MapTable
+    static public class PartT implements IEventOrm {
+        @MapPrimaryKey
+        public int id;
+        @MapColumn
+        public String name1;
+
+        @Override
+        public void beforeUpdate() {
+            throw new RuntimeException("Read only");
+
+        }
+
+        @Override
+        public void afterUpdate() {
+
+        }
+
+        @Override
+        public void beforeInsert() {
+            throw new RuntimeException("Read only");
+        }
+
+        @Override
+        public void afterInsert() {
+
+        }
+
+        @Override
+        public void beforeDelete() {
+            throw new RuntimeException("Read only");
+        }
+
+        @Override
+        public void afterDelete() {
+
+        }
+    }
+    static public class ParentT extends PartT{
+
+        @MapColumn
+        String name2;
+    }
+
+    @Test
+
+    public void TestPartialSelect(){
+        preInit();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(ParentT.class);
+
+        try {
+            session.createTableIfNotExists(ParentT.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        for (int i = 0; i < 5; i++) {
+            ParentT t=new ParentT();
+            t.name1="name1";
+            t.name2="name2";
+            session.insert(t);
+        }
+        var p=session.getList(ParentT.class,null);
+        assertEquals(5,p.size());
+
+        var pb=session.getList(PartT.class,null);
+        assertEquals(5,pb.size());
+
+        session.delete(pb.get(0));
+    }
+
 
 }
