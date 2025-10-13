@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
  * <pre>
  * {@code
  * @MapTableName("myTableSimple")
- * @MapWhere("name not null and id > 2")
+ * @MapTableWhere("name not null and id > 2")
  * public class SimpleTable {
  *     @MapPrimaryKey
  *     public long id;
@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  */
 @Target(value = ElementType.TYPE)
 @Retention(value = RetentionPolicy.RUNTIME)
-public @interface MapWhere {
+public @interface MapTableWhere {
 
     /**
      * A line with a selection condition without the word where

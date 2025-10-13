@@ -1,10 +1,5 @@
 package com.bitnic.bitnicorm;
 
-import com.bitnic.bitnicorm.MapColumn;
-import com.bitnic.bitnicorm.MapJsonColumn;
-import com.bitnic.bitnicorm.MapPrimaryKey;
-import com.bitnic.bitnicorm.MapTableName;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -58,7 +53,7 @@ public class TableDemo {
     @MapColumn
     public DemoByte demoByte=new DemoByte();
     @MapColumn
-    @MapJsonColumn
+    @MapColumnJson
     public DemoJson demoJson=new DemoJson();
     @MapColumn
     public DemoExternalizable externalizable=new DemoExternalizable();

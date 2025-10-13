@@ -75,8 +75,8 @@ class AnnotationOrm {
 //                boolean serializableJson =ISerializableJson.class.isAssignableFrom(f.getType());
                 final MapColumnName column = f.getAnnotation(MapColumnName.class);
                 final MapColumn columnReal = f.getAnnotation(MapColumn.class);
-                final MapIndex mapIndex=f.getAnnotation(MapIndex.class);
-                final MapJsonColumn jsonSerialise=f.getAnnotation(MapJsonColumn.class);
+                final MapColumnIndex mapIndex=f.getAnnotation(MapColumnIndex.class);
+                final MapColumnJson jsonSerialise=f.getAnnotation(MapColumnJson.class);
                 final MapColumnType columnType = f.getAnnotation(MapColumnType.class);
                 final MapForeignKey foreignKey = f.getAnnotation(MapForeignKey.class);
                 final MapColumnReadOnly notInsert = f.getAnnotation(MapColumnReadOnly.class);

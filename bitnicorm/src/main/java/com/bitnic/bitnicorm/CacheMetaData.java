@@ -86,8 +86,8 @@ class CacheMetaData<T> {
                 }
             }
 
-            if (currentClass.isAnnotationPresent(MapWhere.class)&&where==null) {
-                where = Objects.requireNonNull(currentClass.getAnnotation(MapWhere.class)).value();
+            if (currentClass.isAnnotationPresent(MapTableWhere.class)&&where==null) {
+                where = Objects.requireNonNull(currentClass.getAnnotation(MapTableWhere.class)).value();
             }
             if (currentClass.isAnnotationPresent(MapAppendCommandCreateTable.class)) {
                 if(appendCreateTable==null){

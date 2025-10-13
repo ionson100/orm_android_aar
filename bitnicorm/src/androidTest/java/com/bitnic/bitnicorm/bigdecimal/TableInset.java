@@ -29,7 +29,7 @@ public class TableInset extends BaseTable {
     public  String name;
 
 
-    //@MapIndex
+    //@MapColumnIndex
     @MapColumnName("longs")
     public long longs;
 

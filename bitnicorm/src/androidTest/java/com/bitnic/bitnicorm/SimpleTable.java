@@ -3,7 +3,7 @@ package com.bitnic.bitnicorm;
 import java.util.Date;
 
 @MapTableName("myTableSimple")
-@MapWhere("name not null and id > 2")
+@MapTableWhere("name not null and id > 2")
 public class SimpleTable {
     @MapPrimaryKey
     public long id;

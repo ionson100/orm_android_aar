@@ -6,7 +6,7 @@ import java.util.Date;
 
 @MapAppendCommandCreateTable("CREATE INDEX IF NOT EXISTS test_inte ON 'test' ('inte');")
 
-//@MapWhere("name not null")
+//@MapTableWhere("name not null")
 public class MyTable extends BaseTable implements IEventOrm {
 
     public MyTable(){}
@@ -29,7 +29,7 @@ public class MyTable extends BaseTable implements IEventOrm {
     public  String name;
 
 
-    @MapIndex
+    @MapColumnIndex
     @MapColumnName("longs")
     public long longs;
 

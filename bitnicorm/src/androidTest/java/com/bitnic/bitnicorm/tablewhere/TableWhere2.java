@@ -3,10 +3,10 @@ package com.bitnic.bitnicorm.tablewhere;
 import com.bitnic.bitnicorm.MapColumn;
 import com.bitnic.bitnicorm.MapPrimaryKey;
 import com.bitnic.bitnicorm.MapTableName;
-import com.bitnic.bitnicorm.MapWhere;
+import com.bitnic.bitnicorm.MapTableWhere;
 
 @MapTableName("table_where")
-@MapWhere(" is_table = false ")
+@MapTableWhere(" is_table = false ")
 public class TableWhere2 {
 
     public TableWhere2(){

@@ -42,7 +42,7 @@ public class TestGroupBy extends BaseTestClass{
         @MapColumn
         public TableSerialize tableSerialize;
         @MapColumn
-        @MapJsonColumn
+        @MapColumnJson
         public TableSerializeJson tableSerializeJson;
 
      }

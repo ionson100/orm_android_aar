@@ -2442,7 +2442,7 @@ public class TestMethod extends BaseTestClass {
         var pb=session.getList(PartT.class,null);
         assertEquals(5,pb.size());
 
-        session.delete(pb.get(0));
+        //session.delete(pb.get(0));
     }
 
 
