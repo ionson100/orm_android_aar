@@ -1,38 +1,36 @@
-
-
 ### Еще одна ORM для андроида
-[@MapTable @MapTableName](#@MapTable)\
-[@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable)\
-[@MapWhere](#@MapWhere)\
-[@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)\
-[@MapColumn @MapColumnName](#@MapColumn)\
-[@MapColumnJson](#@MapColumnJson)\
-[@MapColumnType](#@MapColumnType)\
-[@MapColumnIndex](#@MapColumnIndex)\
-[@MapForeignKey](#@MapForeignKey)\
-[@MapColumnReadOnly](#@MapColumnReadOnly)
+[Быстрый старт](#start)
 
-[insert](#insert)\
-[update](#update)\
-[delete](#delete)\
-[deleteRows](#deleteRows)\
-[updateRows](#updateRows)\
-[insertBulk](#insertBulk)\
-[getList](#getList)\
-[getListSelect](#getListSelect)\
-[cursorIterator](#cursorIterator)\
-[firstOrDefault](#firstOrDefault)\
-[first](#first)\
-[singleOrDefault](#singleOrDefault)\
-[distinctBy](#distinctBy)\
-[groupBy](#groupBy)\
-[executeScalar](#executeScalar)\
-[executeSQL](#executeSQL)\
-[any](#any)\
-[](#)
-[](#)
-[](#)
-[](#)
+| Маппинг                                                       | ISession                            |
+|---------------------------------------------------------------|-------------------------------------|
+| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                   |
+| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                   |
+| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                   |
+| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)           |
+| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)           |
+| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)           |
+| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                 |
+| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)     |
+| [@MapForeignKey](#@MapForeignKey)                             | [cursorIterator](#cursorIterator)   |
+| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)   |
+| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                     |
+|                                                               | [singleOrDefault](#singleOrDefault) |
+|                                                               | [distinctBy](#distinctBy)           |
+|                                                               | [groupBy](#groupBy)                 |
+|                                                               | [executeScalar](#executeScalar)     |
+|                                                               | [executeSQL](#executeSQL)           |
+|                                                               | [any](#any)                         |
+|                                                               | [](#)                               |
+|                                                               | [](#)                               |
+|                                                               | [](#)                               |
+|                                                               | [](#)                               |
+|                                                               | [](#)                               |
+|                                                               | [](#)                               |
+
+
+
+
+
 
 Написана java 11.\
 minSdk = 24\
@@ -58,7 +56,7 @@ String, UUID, BigDecimal как TEXT, \
 и
 [Externalizable](https://www.geeksforgeeks.org/java/externalizable-interface-java/) \
 Если вы будете использовать в таблице свой тип, то этот тип должен реализовывать вышесказанные интерфейсы.\
-Не стоит забывать, что это негативно сказывается на быстродействии работы с базой, (вставка обновление). \
+Не стоит забывать, что это негативно сказывается на быстродействии работы с базой, (получение вставка обновление). \
 Есть возможность хранить объекты в виде JSON, маркируя поле аннотацией ```@MapColumnJson```, но тут могут возникнуть проблемы с приведением типа. \
 Хотя этот тип сериализации расширяет возможности работы с базой:
 [тынц](https://www.sqlitetutorial.net/sqlite-json/)
@@ -66,6 +64,47 @@ String, UUID, BigDecimal как TEXT, \
 > [!NOTE]\
 > Внимание: Если вы хотите пользоваться атрибутом ```@MapColumnJson```, у вас должна быть подключенная зависимость:
 > ```implementation("com.google.code.gson:gson:2.13.2")```, версию можете выбрать сами.
+
+###  Быстрый старт <a name="start"></a>
+
+```java
+@MapTable
+static class MyTable{
+    @MapPrimaryKey
+    public long id;
+    @MapColumn
+    public String name;
+    @MapColumn
+    public int age;
+    @MapColumn
+    public String email;
+}
+
+new Configure("myfile.sqlite",3,this,true); //start app
+
+try (ISession session = Configure.getSession()) {
+    session.beginTransaction();
+    try {
+        if (session.tableExists(MyTable.class) == false) {
+            session.createTable(MyTable.class);
+        }
+        session.commitTransaction();
+    } catch (Exception e) {
+        throw new Exception(e);
+    } finally {
+        session.endTransaction();
+    }
+    List<MyTable> list = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+        list.add(new MyTable());
+    }
+
+    session.insertBulk(list);
+    List<MyTable> result = session.getList(MyTable.class);
+} catch (Exception e) {
+    throw new RuntimeException(e);
+}
+```
 
 Пример сериализации c использованием [Serializable](https://www.geeksforgeeks.org/java/serialization-and-deserialization-in-java/)
 и
@@ -180,10 +219,9 @@ assertTrue(list.get(0).id == 1L);
 Пример возможных реализации:
 
 ```java
-
 @MapTable //or @MapTableName("simple_table")
 @MapAppendCommandCreateTable("CREATE INDEX IF NOT EXISTS test_name ON 'SimpleTable' ('name');")
-@MapWhere("name not null and age > 20")
+@MapTableWhere("name not null and age > 20")
 class SimpleTable{
     
     @MapPrimaryKey //or @MapPrimaryKeName("id")
@@ -210,10 +248,7 @@ class SimpleTable{
     @MapColumn
     @MapColumnJson
     public MyClass myClass= new MyClass()
-
-
 }
-
 ```
 
 ### Mapping Annotation
@@ -227,6 +262,26 @@ class SimpleTable{
 > [!NOTE]\
 > Внимание: Без аннотаций MapTable и MapTableName никакой связи не произойдет, \
 а при использовании этого класса, получится ошибка.
+
+
+#### @MapTableReadOnly <a name="@MapTableReadOnly"></a>
+Классы типов помеченные этой аннотацией предназначены только для просмотра содержимого таблицы.\
+Нельзя создавать таблицы на основе типов, объекты нельзя: вставлять, обновлять, удалять из таблицы.
+
+```java
+@MapTable
+@MapTableReadOnly
+public class Part  {
+    @MapPrimaryKey
+    public int id;
+    @MapColumn
+    public String name1;
+}
+static public class Parent extends Part{
+    @MapColumn
+    String name2;
+}
+```
 
 #### @MapAppendCommandCreateTable(string) <a name="@MapAppendCommandCreateTable"></a>
 Позволяет указать скрипт, который выполнится при создании таблицы.
@@ -259,7 +314,7 @@ class SimpleTable{
      session.close();
  }
 ```
-#### @MapWhere(line condition without the word where) <a name="@MapWhere"></a>
+#### @Table(line condition without the word where) <a name="@MapTableWhere"></a>
 Уровень класса. В этом аттрибуте указывается условие которое будет автоматически подставляться\
 в условия всех выборок из базы данных (при использовании сессии), даже если вы не укажете их при запросе.\
 А так же, в ```session.count```
@@ -513,6 +568,72 @@ int count = list.size();
 > [!NOTE]\
 > Внимание: Если вы не хотите пользоваться параметром where, поставьте null, \
 > если все же нужно, но не надо учитывать where, поставьте 1 и пишите условие дальше.
+
+####  < T,D > List< D > getList(@NonNull Class<T> aClassFrom,@NonNull Class<D> aClassTo, String where, Object... objects)
+Иногда нужно получить типизированный список не всего объекта, где например 100 полей, а только часть его, конечно
+можно выкрутиться с наследованием, а можно и такой перегрузкой, где тип класса aClassTo, это простой тип без аннотаций,
+основное требование, поля этого типа должны соответствовать названиям колонок в таблице описанной типом: aClassFrom. \
+Пример:
+```javas
+ @MapTable
+static class TableMain {
+    @MapPrimaryKey
+    public int anInt;
+    @MapColumnIndex
+    @MapColumn
+    public double aDouble;
+    @MapColumn
+    public List<String> stringList1=new ArrayList<>();
+    @MapColumn
+    //@MapColumnJson
+    public List<String> stringList2=new ArrayList<>();
+}
+static class TableCustom{
+    public double aDouble;
+    public List<String> stringList1;
+    public List<String> stringList2;
+}
+@Test
+public void TestList() {
+    initConfig();
+    ISession session = Configure.getSession();
+    try {
+        session.dropTableIfExists(TableMain.class);
+        session.createTableIfNotExists(TableMain.class);
+
+    } catch (Exception e) {
+        throw new RuntimeException(e);
+    }
+    for (int i = 0; i < 5; i++) {
+        TableMain t=new TableMain();
+        t.aDouble=0.67D;
+        t.stringList1.add("simple");
+        t.stringList2.add("simple");
+        session.insert(t);
+    }
+    List<TableCustom> list=session.getList(TableMain.class,TableCustom.class," aDouble > 0" );
+    assertTrue(list.size()==5);
+    list.forEach(tableCustom -> {
+        assertTrue(tableCustom.aDouble==0.670D);
+        assertTrue(tableCustom.stringList1.get(0).equals("simple"));
+        assertTrue(tableCustom.stringList2.get(0).equals("simple"));
+    });
+}
+```
+```sql
+CREATE TABLE IF NOT EXISTS "TestListCustom$TableMain" (
+"anInt"  INTEGER  PRIMARY KEY, 
+"aDouble" REAL DEFAULT 0, 
+"stringList1" BLOB, 
+"stringList2" BLOB); 
+CREATE INDEX IF NOT EXISTS TestListCustom$TableMain_aDouble ON "TestListCustom$TableMain" ("aDouble");
+
+SELECT "aDouble","stringList1","stringList2" FROM "TestListCustom$TableMain" WHERE  aDouble > 0;
+```
+> [!NOTE]\
+> Внимание:Поля помеченные в главной таблице как ```@MapColumnJson``` не должны участвовать в целевой, конвертация произойдет
+> с ошибкой, если вам очень надо это поле, сделайте его строкой, и сами конвертируйте в объект.
+
 
 
 ####  < T > void cursorIterator(@NonNull Class<T> aClass,@NonNull IAction<T> callback, String where, Object... objects)  <a name="cursorIterator"></a>
