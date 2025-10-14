@@ -4,7 +4,10 @@ package com.bitnic.bitnicorm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import android.content.Context;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.bitnic.bitnicorm.tablewhere.TableWhere1;
 import com.bitnic.bitnicorm.tablewhere.TableWhere2;
@@ -169,6 +172,48 @@ public class TestWhere extends BaseTestClass {
         try (ISession session = Configure.getSession()) {
 
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+    }
+    @MapTable
+    static class MyTable{
+        @MapPrimaryKey
+        public long id;
+        @MapColumn
+        public String name;
+        @MapColumn
+        public int age;
+        @MapColumn
+        public String email;
+    }
+
+    //@Test
+    public void start(){
+        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        new Configure("myfile.sqlite",3,appContext,true); //start app
+
+        try (ISession session = Configure.getSession()) {
+            session.beginTransaction();
+            try {
+                if (session.tableExists(MyTable.class) == false) {
+                    session.createTable(MyTable.class);
+                }
+                session.commitTransaction();
+            } catch (Exception e) {
+                throw new Exception(e);
+            } finally {
+                session.endTransaction();
+            }
+            List<MyTable> list = new ArrayList<>();
+            for (int i = 0; i < 10; i++) {
+                list.add(new MyTable());
+            }
+
+            session.insertBulk(list);
+            List<MyTable> result = session.getList(MyTable.class);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 

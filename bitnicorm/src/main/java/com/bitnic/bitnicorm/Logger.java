@@ -14,32 +14,29 @@ import java.lang.reflect.Field;
 
 
 class Logger {
-
     private Logger(){}
-    private final static boolean isWrite = Configure.IsWriteLog;
 
-    static  void  LogE(String msg) {
-        if (isWrite) {
+    static  void  E(String msg) {
+        if (Configure.IsWriteLog) {
             Log.e("____ORM____", msg);
         }
-
     }
 
-    static  void LogI(String msg) {
-        if (isWrite) {
+    static  void I(String msg) {
+        if (Configure.IsWriteLog) {
             Log.i("____ORM____", msg);
         }
 
     }
 
     static  void printSql(Cursor cursor) {
-        if (isWrite) {
+        if (Configure.IsWriteLog) {
             try {
                 @SuppressLint("PrivateApi") Field mQuery = cursor.getClass().getDeclaredField("mQuery");
                 mQuery.setAccessible(true);
                 SQLiteQuery v = (SQLiteQuery) mQuery.get(cursor);
                 if(v!=null){
-                    Logger.LogI(v.toString());
+                    Logger.I(v.toString());
                 }
 
             } catch (Exception ignored) {

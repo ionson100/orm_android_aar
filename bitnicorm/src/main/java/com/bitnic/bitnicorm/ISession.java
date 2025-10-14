@@ -231,6 +231,22 @@ public interface ISession extends Closeable {
     <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... objects);
 
     /**
+     * @param aClassFrom  Instances of the  represent classes and interfaces in a running Java application.
+     *                This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
+     *                and a public field marked with the primary key annotation.
+     * @param aClassTo This is an arbitrary class type that should not be marked with any annotations.
+     *                 The class field names must match the table class fields. The query will be built on the basis of these fields.
+     * @param where   A fragment of a SQL query script from a condition, where
+     *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
+     *                and parameter values are entered into the object collection in the order they appear in the query.
+     * @param objects A collection of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
+     * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
+     * @param <D> Custom class type
+     * @return list objects of type D
+     */
+    <T,D> List<D> getList(@NonNull Class<T> aClassFrom,@NonNull Class<D> aClassTo, String where, Object... objects);
+
+    /**
      * Allows you to bypass the selection cursor without creating a result list; on each bypass, a callback function will be called.
      * @param callback A callback function that will be called each time the course call is traversed
      * @param aClass  Instances of the  represent classes and interfaces in a running Java application.

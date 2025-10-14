@@ -6,6 +6,7 @@ package com.bitnic.bitnicorm;
 
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,7 +19,16 @@ class CacheMetaData<T> {
     String where = null;
     String appendCreateTable = null;
     boolean isIAction = false;
+    List<String>  stringListColumnName;
+
+    boolean isTableReadOnly;
     private String[] listSelectColumns = null;
+
+
+    public List<String> getListColumnName(){
+        return List.of(listSelectColumns);
+    }
+
 
 
 
@@ -48,8 +58,14 @@ class CacheMetaData<T> {
             Log.w("---ORM WARNING---","Your class is missing fields to associate with table fields.(@MapColumn or @MapColumnName)  type:"+tClass.getName());
         }
 
+        if (tClass.isAnnotationPresent(MapTableReadOnly.class)) {
+            isTableReadOnly=true;
+        }
+
         if (listSelectColumns == null) {
+
             listSelectColumns = new String[listColumn.size() + 1];
+
             for (int i = 0; i < listColumn.size(); i++) {
                 listSelectColumns[i] = listColumn.get(i).columnName;
             }
@@ -89,6 +105,7 @@ class CacheMetaData<T> {
             if (currentClass.isAnnotationPresent(MapTableWhere.class)&&where==null) {
                 where = Objects.requireNonNull(currentClass.getAnnotation(MapTableWhere.class)).value();
             }
+
             if (currentClass.isAnnotationPresent(MapAppendCommandCreateTable.class)) {
                 if(appendCreateTable==null){
                     appendCreateTable="";

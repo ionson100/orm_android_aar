@@ -2375,45 +2375,16 @@ public class TestMethod extends BaseTestClass {
 
 
     @MapTable
-    static public class PartT implements IEventOrm {
+    @MapTableReadOnly
+    static public class PartT  {
         @MapPrimaryKey
         public int id;
         @MapColumn
         public String name1;
 
-        @Override
-        public void beforeUpdate() {
-            throw new RuntimeException("Read only");
 
-        }
-
-        @Override
-        public void afterUpdate() {
-
-        }
-
-        @Override
-        public void beforeInsert() {
-            throw new RuntimeException("Read only");
-        }
-
-        @Override
-        public void afterInsert() {
-
-        }
-
-        @Override
-        public void beforeDelete() {
-            throw new RuntimeException("Read only");
-        }
-
-        @Override
-        public void afterDelete() {
-
-        }
     }
     static public class ParentT extends PartT{
-
         @MapColumn
         String name2;
     }
@@ -2442,7 +2413,27 @@ public class TestMethod extends BaseTestClass {
         var pb=session.getList(PartT.class,null);
         assertEquals(5,pb.size());
 
-        //session.delete(pb.get(0));
+        try {
+            session.update(pb.get(0));
+        }catch (Exception ignored){
+            assertTrue(true);
+        }
+        try {
+            session.insert(pb.get(0));
+        }catch (Exception ignored){
+            assertTrue(true);
+        }
+        try {
+            session.delete(pb.get(0));
+        }catch (Exception ignored){
+            assertTrue(true);
+        }
+        try {
+            session.insertBulk(pb.get(0));
+        }catch (Exception ignored){
+            assertTrue(true);
+        }
+
     }
 
 

@@ -14,6 +14,17 @@ class SelectBuilder {
         return String.format("SELECT %s FROM %s %s;", String.join(",", d.getStringSelect()), d.tableName, where);
 
     }
+    static String getSqlFree( String selectFields,String tableName,String where) {
+
+        if(where==null||where.isEmpty()){
+            where="";
+        }else {
+            where = String.format("WHERE %s", where);
+        }
+
+        return String.format("SELECT %s FROM %s %s;", String.join(",", selectFields), tableName, where);
+
+    }
 
      static String getSqlDistinct(String columnName, CacheMetaData d,String where) {
 

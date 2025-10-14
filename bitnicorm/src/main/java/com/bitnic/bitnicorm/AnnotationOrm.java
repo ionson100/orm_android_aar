@@ -53,9 +53,9 @@ class AnnotationOrm {
 
 
         List<ItemFieldFree> list = new ArrayList<>();
-        for (Field f : getAllFields(aClass)) {
+        for (Field f : getAllFieldsCustom(aClass)) {
             ItemFieldFree itemFieldFree=new ItemFieldFree();
-            itemFieldFree.columnName=f.getName();
+            itemFieldFree.columnName="\""+f.getName()+"\"";
             itemFieldFree.columnNameRaw=Utils.clearStringTrimRaw(f.getName());
             itemFieldFree.field=f;
             itemFieldFree.type=f.getType();
@@ -136,6 +136,11 @@ class AnnotationOrm {
         if (superClazz != null) {
             fields.addAll(getAllFields(superClazz));
         }
+        return fields;
+    }
+
+    private static List<Field> getAllFieldsCustom(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>(Arrays.asList(clazz.getDeclaredFields()));
         return fields;
     }
 
