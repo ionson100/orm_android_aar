@@ -230,6 +230,8 @@ public interface ISession extends Closeable {
      */
     <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... objects);
 
+
+
     /**
      * @param aClassFrom  Instances of the  represent classes and interfaces in a running Java application.
      *                This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
@@ -245,6 +247,15 @@ public interface ISession extends Closeable {
      * @return list objects of type D
      */
     <T,D> List<D> getList(@NonNull Class<T> aClassFrom,@NonNull Class<D> aClassTo, String where, Object... objects);
+
+    /**
+     * @param aClass
+     * @param where
+     * @param objects
+     * @param <T>
+     * @return
+     */
+    <T> List<T> getListFree(@NonNull Class<T> aClass,String tableName, String where, Object... objects);
 
     /**
      * Allows you to bypass the selection cursor without creating a result list; on each bypass, a callback function will be called.
@@ -747,7 +758,7 @@ public interface ISession extends Closeable {
      * @return object SQLiteDatabase
      * @see <a href="https://developer.android.com/reference/android/database/sqlite/SQLiteDatabase">SQLiteDatabase</a>
      */
-    SQLiteDatabase SqLiteDatabaseForReadable();
+    SQLiteDatabase getSqLiteDatabaseForReadable();
 
     /**
      * Returns a writable SQLiteDatabase object.
@@ -755,7 +766,7 @@ public interface ISession extends Closeable {
      * @return object SQLiteDatabase
      * @see <a href="https://developer.android.com/reference/android/database/sqlite/SQLiteDatabase">SQLiteDatabase</a>
      */
-    SQLiteDatabase SqLiteDatabaseForWritable();
+    SQLiteDatabase getSqLiteDatabaseForWritable();
 
     /**
      * Get total number of records in the table

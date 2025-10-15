@@ -1,35 +1,40 @@
 ### Еще одна ORM для андроида
 [Быстрый старт](#start)
 
-| Маппинг                                                       | ISession                            |
-|---------------------------------------------------------------|-------------------------------------|
-| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                   |
-| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                   |
-| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                   |
-| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)           |
-| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)           |
-| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)           |
-| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                 |
-| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)     |
-| [@MapForeignKey](#@MapForeignKey)                             | [cursorIterator](#cursorIterator)   |
-| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)   |
-| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                     |
-|                                                               | [singleOrDefault](#singleOrDefault) |
-|                                                               | [distinctBy](#distinctBy)           |
-|                                                               | [groupBy](#groupBy)                 |
-|                                                               | [executeScalar](#executeScalar)     |
-|                                                               | [executeSQL](#executeSQL)           |
-|                                                               | [any](#any)                         |
-|                                                               | [](#)                               |
-|                                                               | [](#)                               |
-|                                                               | [](#)                               |
-|                                                               | [](#)                               |
-|                                                               | [](#)                               |
-|                                                               | [](#)                               |
-
-
-
-
+| Маппинг                                                       | ISession                                           |
+|---------------------------------------------------------------|----------------------------------------------------|
+| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                                  |
+| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                                  |
+| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                                  |
+| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)                          |
+| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)                          |
+| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                          |
+| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                |
+| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                    |
+| [@MapForeignKey](#@MapForeignKey)                             | [cursorIterator](#cursorIterator)                  |
+| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                  |
+| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                    |
+|                                                               | [singleOrDefault](#singleOrDefault)                |
+| [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                          |
+|                                                               | [groupBy](#groupBy)                                |
+|                                                               | [executeScalar](#executeScalar)                    |
+|                                                               | [executeSQL](#executeSQL)                          |
+|                                                               | [any](#any)                                        |
+|                                                               | [tableExists](#tableExists)                        |
+|                                                               | [getTableName](#getTableName)                      |
+|                                                               | [createTable](#createTable)                        |
+|                                                               | [createTableIfNotExists](#createTableIfNotExists)  |
+|                                                               | [dropTableIfExists](#dropTableIfExists)            |
+|                                                               | [getPath](#getPath)                                |
+|                                                               | [IsAlive](#IsAlive)                                |
+|                                                               | [SqLiteDatabaseForWritable](#SqLiteDatabaseForWritable) |
+|                                                               | [SqLiteDatabaseForReadable](#SqLiteDatabaseForReadable) |
+|                                                               | [getContentValues](#getContentValues)              |
+|                                                               | [getContentValuesForUpdate](#getContentValuesForUpdate) |
+|                                                               | [save](#save)                                      |
+|                                                               | [](#)                                              |
+|                                                               | [](#)                                              |
+|                                                               | [](#)                                              |
 
 
 Написана java 11.\
@@ -58,7 +63,7 @@ String, UUID, BigDecimal как TEXT, \
 Если вы будете использовать в таблице свой тип, то этот тип должен реализовывать вышесказанные интерфейсы.\
 Не стоит забывать, что это негативно сказывается на быстродействии работы с базой, (получение вставка обновление). \
 Есть возможность хранить объекты в виде JSON, маркируя поле аннотацией ```@MapColumnJson```, но тут могут возникнуть проблемы с приведением типа. \
-Хотя этот тип сериализации расширяет возможности работы с базой:
+Хотя этот тип сериализация расширяет возможности работы с базой:
 [тынц](https://www.sqlitetutorial.net/sqlite-json/)
 
 > [!NOTE]\
@@ -349,7 +354,7 @@ static public class Parent extends Part{
 Если вы хотите создать индекс по вум или более полям, вам стоит воспользоваться: ```MapAppendCommandCreateTable```\
 или ``` session.executeSQL```
 #### @MapForeignKey("FOREIGN KEY (email) REFERENCES SimpleTable (email)") <a name="@MapForeignKey"></a>
-Будет вставлена строка создания ForeignKey при формировании скрипта запроса на создания таблицы.
+Будет вставлена строка создания ForeignKey при формировании скрипта запроса на создание таблицы.
 
 #### @MapColumnReadOnly <a name="@MapColumnReadOnly"></a>
 Поля класса помеченные этой аннотацией, не будут участвовать в запросе на вставку и модификацию записи. \
@@ -654,6 +659,51 @@ session.cursorIterator(MyTable.class,table -> {
     },"name not null order by name");
 assertTrue(list.size()==10);
 ```
+####  < T > void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> function)
+Эта функция, которая принимает объект курсора преобразует каждый проход курсора в объект переданного типа, и передает
+этот объект  в функцию обратного вызова. \
+Класс типа выходного объекта, может быть произвольным типом, без аннотаций, единственное условие, название полей класса выходного типа,
+должны совпадать с полями строкой запроса.
+```java
+@MapTable
+static class TableUser {
+    @MapPrimaryKey
+    public int id;
+    @MapColumn
+    String name="name";
+    @MapColumn
+    int age=18;
+    @MapColumn
+    String email="ion@qw.com";
+}
+static class TableUserCustom {
+    public int id;
+    String name="name";
+    int age=18;
+    String email="ion@qw.com";
+}
+ISession session = Configure.getSession();
+try {
+    session.dropTableIfExists(TableUser.class);
+    session.createTableIfNotExists(TableUser.class);
+
+} catch (Exception e) {
+    throw new RuntimeException(e);
+}
+
+for (int i = 0; i < 5; i++) {
+    session.insert(new TableUser());
+}
+
+List<TableUserCustom> list = new ArrayList<>();
+String sql="SELECT id,name,age,email FROM "+session.getTableName(TableUser.class);
+Cursor cursor=session.execSQLRaw(sql);
+session.cursorIterator(TableUserCustom.class,cursor,tableUserCustom -> {
+    list.add(tableUserCustom);
+});
+
+assertTrue(list.size()==5);
+```
 
 #### < T, D extends Object > List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects); <a name="getListSelect"></a>
 
@@ -719,7 +769,7 @@ Map<Integer>,List<MyTable>>   result = session.groupBy(MyTable.class,"age",null)
 #### Object executeScalar(@NonNull String sql);
 Это типовые функции, которые есть в любой ОРМ, возвращают одиночное значение запакованное в Object. \
 Кто в теме, это первая строка курсора с индексом колонки 0.
-```javas
+```java
 ISession session = Configure.getSession();
 String sql="Select count (*)  from "+session.getTableName(MyTable.class);
 int count= (int) session.executeScalar(sql);
@@ -730,7 +780,7 @@ ISession session = Configure.getSession;
 
 Это типовая функция, которая есть в любой ОРМ, просто выполняет запрос и не возвращает результат, можно применять параметры. \
 как правило применяется при старте приложения, после инициализации конфигурации, или после создания таблицы.
-```javas
+```java
 ISession session = Configure.getSession();
 session.executeSQL("CREATE INDEX IF NOT EXISTS test_name ON 'MyTable' ('name');",null);
 
@@ -740,10 +790,210 @@ session.executeSQL("CREATE INDEX IF NOT EXISTS test_name ON 'MyTable' ('name');"
 #### < T > boolean any(@NonNull Class<T> aClass)
 
 Это типовые функции, которые есть в любой ОРМ, позволяют проверить существуют ли записи в таблице, без условия и с условием.
-```javas
+```java
 ISession session = Configure.getSession();
 boolean  b=session.any(MyTable.class," name is null");
 assertFalse(b);
 ```
+
+#### boolean tableExists(@NonNull Class<T> aClass) <a name="tableExists"></a>
+#### boolean tableExists(@NonNull String tableName)
+Проверяет базу данных на существование таблицы. Если таблица найдена возвращает true, если нет - false.
+getTableName
+```java
+Isession session = Configure.getSesion();
+boolean exist = session.tableExists(MyTable.class);
+exist = session.tableExists(session.getTableName(MyTable.class));
+```
+#### < T > String getTableName(@NonNull Class<T> aClass) <a name="getTableName"></a>
+Возвращает название таблицы, ассоциированное с типом класса.
+```java
+Isession session = Configure.getSesion();
+String sql="SELCT * FROM "+session.getTableName(MyTable.class);
+```
+
+#### < T > void  createTable(@NonNull Class<T> aClass) throws Exception <a name="createTable"></a>
+Создает таблицу в базе данных, если таблица существует или нарушена логика построения - выбрасывает ошибку.
+```java
+Isession session = Configure.getSesion();
+session.createTable(MyTable.class);
+```
+#### < T > void createTableIfNotExists(@NonNull Class<T> aClass) throws Exception <a name="createTableIfNotExists"></a>
+Создает таблицу в базе данных, если нарушена логика построения - выбрасывает ошибку.
+
+```java
+Isession session = Configure.getSesion();
+session.createTableIfNotExists(MyTable.class);
+```
+#### < T > void dropTableIfExists(@NonNull Class<T> aClass) <a name="dropTableIfExists"></a>
+#### void dropTableIfExists(@NonNull String tableName)
+Удаляет таблицу если она существует.
+```java
+Iession session = Configure.getSesion();
+session.dropTableIfExists(MyTable.class);
+String tableName=session.getTableName(MyTable.class);
+session.dropTableIfExists(fableName);
+```
+####  String getPath() <a name="getPath"></a>
+Возвращает полный путь к файлу базы данных.
+
+#### boolean IsAlive() <a name="IsAlive"></a>
+Проверяет, зарыта ли сессия?
+#### SQLiteDatabase SqLiteDatabaseForWritable() <a name="SqLiteDatabaseForWritable"></a>
+Получает объект SQLiteDatabase в контексте сессии, через него можно управлять базой данных минуя орм.\
+Пример вставки строки:
+```java
+ @MapTable
+static class TableMain {
+    @MapPrimaryKey
+    public int anInt;
+    @MapColumnIndex
+    @MapColumn
+    public double aDouble;
+    @MapColumn
+    public List<String> stringList1=new ArrayList<>();
+    @MapColumn
+    //@MapColumnJson
+    public List<String> stringList2=new ArrayList<>();
+}
+ISession session = Configure.getSession();
+
+TableMain t = new TableMain();
+t.aDouble=0.67D;
+t.stringList1.add("simple");
+t.stringList2.add("simple");
+
+ContentValues contentValues=session.getContentValues(t);
+String tableName=session.getTableName(TableMain.class);
+
+SQLiteDatabase sql=session.getSqLiteDatabaseForWritable();
+
+sql.insert(tableName,null,contentValues);
+List<TableMain> list=session.getList(TableMain.class);
+assertTrue(list.size()==1);
+list.forEach(tableCustom -> {
+    assertTrue(tableCustom.aDouble==0.670D);
+    assertTrue(tableCustom.stringList1.get(0).equals("simple"));
+    assertTrue(tableCustom.stringList2.get(0).equals("simple"));
+});
+```
+
+#### SQLiteDatabase SqLiteDatabaseForReadable() <a name="SqLiteDatabaseForReadable"></a>
+Получает объект SQLiteDatabase в контексте сессии, через него можно управлять базой данных минуя орм.\
+Пример получения курсора на выборку с условием:
+```java
+    @MapTable
+    static class TableUser {
+        @MapPrimaryKey
+        public int id;
+        @MapColumn
+        String name="name";
+        @MapColumn
+        int age=18;
+        @MapColumn
+        String email="ion@qw.com";
+    }
+
+    @Test
+    public void TestReadable(){
+        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        new Configure("myfile.sqlite",3,appContext);
+        ISession session = Configure.getSession();
+        try {
+            session.dropTableIfExists(TableUser.class);
+            session.createTableIfNotExists(TableUser.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        for (int i = 0; i < 5; i++) {
+            session.insert(new TableUser());
+        }
+        String tableName=session.getTableName(TableUser.class);
+
+        List<TableUser> list = new ArrayList<>();
+        SQLiteDatabase sql=session.getSqLiteDatabaseForReadable();
+        Cursor cursor=sql.query(tableName,new String[]{"name","age","email","id"},"name not null",null,null,null,null);
+
+        try {
+
+            if (cursor.moveToFirst()) {
+                do {
+                    TableUser instance = new TableUser();
+                    instance.name=cursor.getString(0);
+                    instance.age=cursor.getInt(1);
+                    instance.email=cursor.getString(2);
+                    instance.id=cursor.getInt(3);
+                    list.add(instance);
+                } while (cursor.moveToNext());
+            }
+
+        }finally {
+            cursor.close();
+        }
+        assertTrue(list.size()==5);
+    }
+```
+####  < T > ContentValues getContentValues(@NonNull T item)  <a name="getContentValues"></a>
+Получение объекта ```ContentValues``` . Тип ```item``` должен реализовывать аннотации маппинга. \
+Объект ```ContentValues``` получает данные по всем полям ассоциированных с таблицей.
+```java
+ISession session=Configure.getSession();
+ContentValues contentValues=sesssion.getContentValues(new MyTable);
+```
+
+
+#### < T > ContentValues getContentValuesForUpdate(@NonNull Class<T> aClass,PairColumnValue columnValues) <a name="getContentValuesForUpdate"></a>
+Получение объекта ```ContentValues``` . Тип ```item``` должен реализовывать аннотации маппинга. \
+Объект ```ContentValues``` получает данные по всем полям введенных пользователем в PairColumnValue, как правило, может использоваться 
+при обновлении записи в таблице по условию равенства первичного ключа.
+```java
+ISession session=Configure.getSession();
+ContentValues  contentValues =session.getContentValuesForUpdate(TableUser.class,new PairColumnValue()
+                .put("name","newName")
+                .put("age",20)
+                .put("email","ion100@df.com"));
+```
+
+####  <T> int save(@NonNull T item) <a name="save"></a>
+Этот метод может применяться для вставки или обновления объекта ассоциированного со строкой таблицы, класс типа этого объекта
+должен реализовывать класс ```Prsistent```, орм сама решает, вставлять объект или обновлять.
+
+```java
+
+
+@MapTable
+static class TableUser extends Persistent {
+    @MapPrimaryKey
+    public int id;
+    @MapColumn
+    String name = "name";
+    @MapColumn
+    int age = 18;
+    @MapColumn
+    String email = "ion@qw.com";
+}
+// ...
+
+ISession session = Configure.getSession();
+TableUser tableUser = new TableUser();
+
+session.save(tableUser)//insert
+
+tableUser =sessiom.firstOrDefault(TableUser .class);
+tableUser,age=30;
+
+session.save(tableUser);//update
+```
+#### Маркировка объектов через наследование class Persistent <a name="Persistent"></a>
+Одна из проблем при создании орм, сохранять сведения об объекте, в нашем случае это сведения
+откуда получен объект, из базы или нет, в разных орм - разный подход, например создание прокси объекта на основе данного типа (java, C#), маркировка объекта специальным атрибутом(C#)и т.д.
+В нашем случае, это наследования объекта, описывающего табличную сущность, от class Persistent.
+В этом классе всего одно булево поле ``` boolean isPersistent;```, которое характеризует происхождение объекта (true-получен из базы false-создан на клиенте и в базе не сохранен)
+на основе этого можно принимать решение, что делать с объектом при помещении его в метод ```save```, вставлять или обновлять, в то же время, это поле решает: 
+выкинуть ли исключение при вставке в базу объекта полученного ранее из базы, удаление или обновление локально созданного объекта.\
+Применение этого наследования не догма, вы можете отказаться, и сами следить откуда получен объект, в этом случае - вы не сможете применять метод ```save```.
+
 
 

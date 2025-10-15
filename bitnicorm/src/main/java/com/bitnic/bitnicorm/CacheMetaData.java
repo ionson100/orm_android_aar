@@ -15,6 +15,7 @@ class CacheMetaData<T> {
     public List<ItemField> listColumn = null;
     public ItemField keyColumn = null;
     String tableName = null;
+    String tableNameRaw = null;
     boolean isPersistent;
     String where = null;
     String appendCreateTable = null;

@@ -3,9 +3,9 @@ package com.bitnic.bitnicorm;
  * Copyright © 2016-2017 OOO Bitnic                                 *
  * Created by OOO Bitnic on 08.02.16   corp@bitnic.ru               *
  * ******************************************************************/
-import java.util.Dictionary;
 import java.util.Hashtable;
-
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 class CacheDictionary {
@@ -13,8 +13,19 @@ class CacheDictionary {
     private static final Object lock = new Object();
     private static final Object lockFree = new Object();
 
-    private static final Dictionary<String, CacheMetaData> dic = new Hashtable();
-    private static final Dictionary<String, CacheMetaDataFree> dicFree = new Hashtable();
+    private static final Map<String, CacheMetaData> dic = new Hashtable();
+    private static final Map<String, CacheMetaDataFree> dicFree = new Hashtable();
+
+    public static CacheMetaData<?> getCacheMetaDataFromTableName(String tableName)  {
+        AtomicReference<CacheMetaData> metaData= new AtomicReference<>();
+        dic.forEach((s, cacheMetaData) -> {
+            if(cacheMetaData.tableName.equals(tableName)){
+                metaData.set(cacheMetaData);
+            }
+        });
+        return metaData.get();
+
+    }
 
     public static CacheMetaData<?> getCacheMetaData(Class aClass)  {
         if (dic.get(aClass.getName()) == null) {

@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -203,12 +204,12 @@ public class Configure implements ISession {
     }
 
     @Override
-    public SQLiteDatabase SqLiteDatabaseForReadable() {
+    public SQLiteDatabase getSqLiteDatabaseForReadable() {
         return sqLiteDatabaseForReadable;
     }
 
     @Override
-    public SQLiteDatabase SqLiteDatabaseForWritable() {
+    public SQLiteDatabase getSqLiteDatabaseForWritable() {
         return sqLiteDatabaseForWritable;
     }
 
@@ -356,7 +357,6 @@ public class Configure implements ISession {
         return res;
     }
 
-
     @Override
     public <T> int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... objects) {
 
@@ -371,7 +371,6 @@ public class Configure implements ISession {
         return sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, parametrize(objects));
 
     }
-
 
     static <T> String whereBuilderRaw(String where, CacheMetaData<T> data) {
 
@@ -424,29 +423,27 @@ public class Configure implements ISession {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         where = whereBuilder(where, metaData);
-        Cursor cursor = null;
-        try {
-            String sql = SelectBuilder.getSql(metaData, where);
-            cursor = execSQLRaw(sql, objects);
-            List<T> list = new ArrayList<>();
+
+
+        String sql = SelectBuilder.getSql(metaData, where);
+        List<T> list;
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
+            list = new ArrayList<>();
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
-                    if(metaData.isPersistent){
-                        ((Persistent)instance).isPersistent=true;
+                    if (metaData.isPersistent) {
+                        ((Persistent) instance).isPersistent = true;
                     }
                     Compound(metaData.listColumn, metaData.keyColumn, cursor, instance);
                     list.add(instance);
                 } while (cursor.moveToNext());
             }
-            return list;
-        } catch (Exception e) {
+        }catch (Exception e){
             throw new RuntimeException(e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
         }
+        return list;
+
     }
 
     @Override
@@ -461,13 +458,13 @@ public class Configure implements ISession {
             }
         });
         where = whereBuilder(where, metaData);
-        Cursor cursor = null;
-        try {
+
             String sql = SelectBuilder.getSqlFree(metaDataFree.getSelectColumns(),metaData.tableName, where);
             Logger.I(sql);
-            cursor = execSQLRaw(sql, objects);
+        List<D> list;
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
 
-            List<D> list=new ArrayList<>(cursor.getCount());
+            list = new ArrayList<>(cursor.getCount());
             if (cursor.moveToFirst()) {
                 do {
 
@@ -476,15 +473,43 @@ public class Configure implements ISession {
                     list.add(instance);
                 } while (cursor.moveToNext());
             }
-
-            return list;
-
         }catch (Exception e){
             throw new RuntimeException(e);
-        }finally {
-            if(cursor!=null){
-                cursor.close();
+        }
+
+        return list;
+
+
+
+    }
+
+    @Override
+    public <T> List<T> getListFree(@NonNull Class<T> aClass, String tableName, String where, Object... objects) {
+        CacheMetaDataFree<?> metaDataFree = CacheDictionary.getCacheMetaDataFree(aClass);
+        var metaData=CacheDictionary.getCacheMetaDataFromTableName(tableName);
+
+        if(metaData!=null){
+
+        }
+        if(where==null){
+            where="";
+        }
+        String sql= "SELECT "+metaDataFree.getSelectColumns()+ "FROM \""+tableName+"\" "+where+";";
+        Logger.I(sql);
+        List<T> list=new ArrayList<>();
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
+
+            if (cursor.moveToFirst()) {
+                do {
+                    T instance = aClass.newInstance();
+
+                    CompoundFree(metaDataFree.listColumn, cursor, instance);
+                    list.add(instance);
+                } while (cursor.moveToNext());
             }
+            return list;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -492,55 +517,49 @@ public class Configure implements ISession {
     public <T> void cursorIterator(@NonNull Class<T> aClass, @NonNull IAction<T> callback, String where, Object... objects) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         where = whereBuilder(where, metaData);
-        Cursor cursor = null;
-        try {
+
+
             String sql = SelectBuilder.getSql(metaData, where);
-            cursor = execSQLRaw(sql, objects);
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
 
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
-                    if(metaData.isPersistent){
-                        ((Persistent)instance).isPersistent=true;
+                    if (metaData.isPersistent) {
+                        ((Persistent) instance).isPersistent = true;
                     }
                     callback.invoke(instance);
                     Compound(metaData.listColumn, metaData.keyColumn, cursor, instance);
                 } while (cursor.moveToNext());
             }
-        } catch (Exception e) {
+        }catch (Exception e){
             throw new RuntimeException(e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
         }
+
     }
 
     @Override
     public <T> T firstOrDefault(@NonNull Class<T> aClass, String where, Object... objects) {
-        Cursor cursor = null;
+
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         where = whereBuilder(where, metaData);
         String sql = SelectBuilder.getSqlLimit(metaData, where, 1);
 
-        try {
-            cursor = execSQLRaw(sql, objects);
+
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
             if (cursor.moveToFirst()) {
                 T instance = aClass.newInstance();
-                if(metaData.isPersistent){
-                    ((Persistent)instance).isPersistent=true;
+                if (metaData.isPersistent) {
+                    ((Persistent) instance).isPersistent = true;
                 }
                 Compound(metaData.listColumn, metaData.keyColumn, cursor, instance);
                 return instance;
 
             }
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+        }catch (Exception e){
+            throw new RuntimeException(e);
         }
+
         return null;
     }
 
@@ -555,20 +574,20 @@ public class Configure implements ISession {
 
     @Override
     public <T> T single(@NonNull Class<T> aClass, String where, Object... objects) throws Exception {
-        Cursor cursor = null;
+
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         where = whereBuilder(where, metaData);
         String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
         Logger.I(sql);
         Object[] resultArray = new Object[]{null, null};
         int index = 0;
-        try {
-            cursor = execSQLRaw(sql, objects);
+
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
-                    if(metaData.isPersistent){
-                        ((Persistent)instance).isPersistent=true;
+                    if (metaData.isPersistent) {
+                        ((Persistent) instance).isPersistent = true;
                     }
                     Compound(metaData.listColumn, metaData.keyColumn, cursor, instance);
                     resultArray[index] = instance;
@@ -576,7 +595,8 @@ public class Configure implements ISession {
                 } while (cursor.moveToNext());
 
             }
-            if(resultArray[0]==null&&resultArray[1]==null){
+        }
+        if(resultArray[0]==null&&resultArray[1]==null){
                 throw new Exception("!!!No object was found matching the selection criteria.");
             }
             if (resultArray[1] == null) {
@@ -584,32 +604,26 @@ public class Configure implements ISession {
             } else {
                throw new Exception("!!!There is more than one object by condition");
             }
-        } catch (Exception ex) {
-            throw new Exception(ex);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
+
     }
 
 
     @Override
     public <T> T singleOrDefault(@NonNull Class<T> aClass, String where, Object... objects) {
-        Cursor cursor = null;
+
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         where = whereBuilder(where, metaData);
         String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
         Logger.I(sql);
         Object[] resultArray = new Object[]{null, null};
         int index = 0;
-        try {
-            cursor = execSQLRaw(sql, objects);
+
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
-                    if(metaData.isPersistent){
-                        ((Persistent)instance).isPersistent=true;
+                    if (metaData.isPersistent) {
+                        ((Persistent) instance).isPersistent = true;
                     }
                     Compound(metaData.listColumn, metaData.keyColumn, cursor, instance);
                     resultArray[index] = instance;
@@ -617,18 +631,15 @@ public class Configure implements ISession {
                 } while (cursor.moveToNext());
 
             }
-            if (resultArray[1] == null) {
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+        if (resultArray[1] == null) {
                 return (T) resultArray[0];
             } else {
                 return null;
             }
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
+
     }
 
     static String[] parametrize(Object... objects) {
@@ -668,57 +679,51 @@ public class Configure implements ISession {
     public <T, D> List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects) {
         List<D> list;
 
-        try {
+
 
             CacheMetaData<T> metaData = getCacheMetaData(aClass);
             where = whereBuilder(where, metaData);
-            Cursor cursor;
+
             String[] sdd = new String[]{Utils.clearStringTrimRaw(columnName)};
             String[] str = parametrize(objects);
-            cursor = sqLiteDatabaseForReadable.query(metaData.tableName, sdd, where, str, null, null, null, null);
+        try (Cursor cursor = sqLiteDatabaseForReadable.query(metaData.tableName, sdd, where, str, null, null, null, null)) {
             list = new ArrayList<>(cursor.getCount());
             Logger.printSql(cursor);
-            try {
-                if (cursor.moveToFirst()) {
-                    do {
 
-                        int columnType = cursor.getType(0);
-                        switch (columnType) {
-                            case Cursor.FIELD_TYPE_NULL: {
-                                list.add(null);
-                                continue;
-                            }
-                            case Cursor.FIELD_TYPE_STRING: {
-                                list.add((D) cursor.getString(0));
-                                continue;
-                            }
-                            case Cursor.FIELD_TYPE_INTEGER: {
-                                list.add((D) (Object) cursor.getInt(0));
-                                continue;
-                            }
-                            case Cursor.FIELD_TYPE_FLOAT: {
-                                list.add((D) (Object) cursor.getFloat(0));
-                                continue;
-                            }
-                            case Cursor.FIELD_TYPE_BLOB: {
-                                list.add((D) cursor.getBlob(0));
-                                continue;
-                            }
-                            default: {
-                                throw new RuntimeException("не могу определить тип поля:" + columnType);
-                            }
+            if (cursor.moveToFirst()) {
+                do {
+
+                    int columnType = cursor.getType(0);
+                    switch (columnType) {
+                        case Cursor.FIELD_TYPE_NULL: {
+                            list.add(null);
+                            continue;
                         }
-                    } while (cursor.moveToNext());
-                }
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                cursor.close();
+                        case Cursor.FIELD_TYPE_STRING: {
+                            list.add((D) cursor.getString(0));
+                            continue;
+                        }
+                        case Cursor.FIELD_TYPE_INTEGER: {
+                            list.add((D) (Object) cursor.getInt(0));
+                            continue;
+                        }
+                        case Cursor.FIELD_TYPE_FLOAT: {
+                            list.add((D) (Object) cursor.getFloat(0));
+                            continue;
+                        }
+                        case Cursor.FIELD_TYPE_BLOB: {
+                            list.add((D) cursor.getBlob(0));
+                            continue;
+                        }
+                        default: {
+                            throw new RuntimeException("не могу определить тип поля:" + columnType);
+                        }
+                    }
+                } while (cursor.moveToNext());
             }
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
+
+
         return list;
     }
 
@@ -756,11 +761,12 @@ public class Configure implements ISession {
                     "Perhaps you meant the name of the primary key, which is prohibited.");
         }
         where = whereBuilder(where, metaData);
-        Cursor cursor = null;
-        try {
-            String sql = SelectBuilder.getSql(metaData, where);
-            cursor = execSQLRaw(sql, objects);
-            Map<Object, List<T>> map = new HashMap<>();
+
+
+        String sql = SelectBuilder.getSql(metaData, where);
+        Map<Object, List<T>> map;
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
+            map = new HashMap<>();
             int colimnIndex = -1;
             if (cursor.moveToFirst()) {
                 do {
@@ -770,8 +776,8 @@ public class Configure implements ISession {
                     Object key = Utils.getObjectFromCursor(cursor, colimnIndex);
 
                     T instance = aClass.newInstance();
-                    if(metaData.isPersistent){
-                        ((Persistent)instance).isPersistent=true;
+                    if (metaData.isPersistent) {
+                        ((Persistent) instance).isPersistent = true;
                     }
                     Compound(metaData.listColumn, metaData.keyColumn, cursor, instance);
                     if (map.containsKey(key)) {
@@ -787,14 +793,11 @@ public class Configure implements ISession {
                     }
                 } while (cursor.moveToNext());
             }
-            return map;
-        } catch (Exception e) {
+        }catch (Exception e){
             throw new RuntimeException(e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
         }
+        return map;
+
     }
 
     @Override
@@ -815,25 +818,22 @@ public class Configure implements ISession {
                     "Perhaps you meant the name of the primary key, which is prohibited.");
         }
         where = whereBuilder(where, metaData);
-        Cursor cursor = null;
-        try {
-            String sql = SelectBuilder.getSqlDistinct(columnName, metaData, where);
-            cursor = execSQLRaw(sql, objects);
-            List<Object> objectList = new ArrayList<>();
+
+
+        String sql = SelectBuilder.getSqlDistinct(columnName, metaData, where);
+
+        List<Object> objectList;
+        try (Cursor cursor = execSQLRaw(sql, objects)) {
+            objectList = new ArrayList<>();
             if (cursor.moveToFirst()) {
                 do {
                     Object key = Utils.getObjectFromCursor(cursor, 0);
                     objectList.add(key);
                 } while (cursor.moveToNext());
             }
-            return objectList;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
         }
+        return objectList;
+
     }
 
     @Override
@@ -868,8 +868,6 @@ public class Configure implements ISession {
          return update(item);
     }
 
-
-
     <T> ContentValues getInnerContentValuesForUpdate(CacheMetaData<T> data, PairColumnValue columnValues) {
         ContentValues contentValues =  new ContentValues(columnValues.objectMap.size());
         Utils.builderSqlNew(data, contentValues, columnValues.objectMap);
@@ -883,7 +881,6 @@ public class Configure implements ISession {
         return contentValues;
 
     }
-
 
     @Override
     public Object executeScalar(@NonNull String sql, Object... objects) {
@@ -974,42 +971,48 @@ public class Configure implements ISession {
 
     @Override
     public List<Map<String, Object>> execSQLRawMap(@NonNull String sql, Object... objects) {
-        try {
+
+
 
             String[] params = parametrize(objects);
-            Cursor cursor = sqLiteDatabaseForWritable.rawQuery(sql, params);
+            Logger.I(sql);
 
-            List<Map<String, Object>> list = new ArrayList<>(cursor.getCount());
+            List<Map<String, Object>> list;
+
+        try (Cursor cursor = sqLiteDatabaseForWritable.rawQuery(sql, params)) {
+
+            list = new ArrayList<>(cursor.getCount());
             if (cursor.moveToFirst()) {
                 do {
                     list.add(Utils.cursorToMap(cursor));
 
                 } while (cursor.moveToNext());
             }
-            return list;
-
-        } finally {
-            Logger.I(sql);
         }
+        return list;
+
+
+
     }
 
     @Override
     public List<Object[]> execSQLRawArray(@NonNull String sql, Object... objects) {
-        try {
+
 
             String[] params = parametrize(objects);
-            Cursor cursor = sqLiteDatabaseForWritable.rawQuery(sql, params);
-            List<Object[]> list = new ArrayList<>(cursor.getCount());
+            Logger.I(sql);
+        List<Object[]> list;
+        try (Cursor cursor = sqLiteDatabaseForWritable.rawQuery(sql, params)) {
+            list = new ArrayList<>(cursor.getCount());
             if (cursor.moveToFirst()) {
                 do {
                     list.add(Utils.CursorToArray(cursor));
                 } while (cursor.moveToNext());
             }
-            return list;
-
-        } finally {
-            Logger.I(sql);
         }
+        return list;
+
+
     }
 
     @Override
@@ -1053,8 +1056,6 @@ public class Configure implements ISession {
         }
         return d;
     }
-
-
 
     @Override
     public void dropTableIfExists(@NonNull String tableName) {
@@ -1139,7 +1140,6 @@ public class Configure implements ISession {
         String sql = "SELECT name FROM sqlite_master WHERE type='table' AND name= " + tableName;
         return executeScalar(sql) != null;
     }
-
 
     private Object InnerListExe(String sql, String[] strings) {
 
