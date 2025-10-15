@@ -278,7 +278,7 @@ public interface ISession extends Closeable {
      *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *                 and a public field marked with the primary key annotation.
      * @param cursor   @see <a href="https://developer.android.com/reference/android/database/Cursor">Cursor</a>
-     * @param function lambda realisation {@link IAction}
+     * @param callback lambda realisation {@link IAction}
      * @param <T>      The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * <pre>
      * {@code
@@ -305,7 +305,7 @@ public interface ISession extends Closeable {
      *
      * </pre>
      */
-    <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> function);
+    <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> callback);
 
 
 

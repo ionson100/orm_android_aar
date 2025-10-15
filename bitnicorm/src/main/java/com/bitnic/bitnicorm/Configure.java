@@ -23,7 +23,6 @@ import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -452,7 +451,7 @@ public class Configure implements ISession {
         CacheMetaDataFree<?> metaDataFree =  CacheDictionary.getCacheMetaDataFree(aClassTo);
         List<String> stringList=metaData.getListColumnName();
         metaDataFree.listColumn.forEach(itemFieldFree -> {
-            if(stringList.contains(itemFieldFree.columnName)==false){
+            if(!stringList.contains(itemFieldFree.columnName)){
                 throw new RuntimeException("Error in field name in type: "+aClassTo+"  field: "+itemFieldFree.columnNameRaw+","+ System.lineSeparator()+
                         "a column with this name does not exist in the table named: " +metaData.tableName);
             }
@@ -528,8 +527,9 @@ public class Configure implements ISession {
                     if (metaData.isPersistent) {
                         ((Persistent) instance).isPersistent = true;
                     }
-                    callback.invoke(instance);
                     Compound(metaData.listColumn, metaData.keyColumn, cursor, instance);
+                    callback.invoke(instance);
+
                 } while (cursor.moveToNext());
             }
         }catch (Exception e){
@@ -728,14 +728,14 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> function) {
+    public <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> callback) {
         try (cursor) {
             CacheMetaDataFree<?> metaDataFree = CacheDictionary.getCacheMetaDataFree(aClass);
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
                     CompoundFree(metaDataFree.listColumn, cursor, instance);
-                    function.invoke(instance);
+                    callback.invoke(instance);
                 } while (cursor.moveToNext());
             }
         } catch (Exception ex) {
@@ -929,7 +929,7 @@ public class Configure implements ISession {
 
         List<List<T>> sd = partition(tList);
         for (List<T> ts : sd) {
-            InnerInsertBulk<T> s = new InnerInsertBulk(metaData);
+            InnerInsertBulk<T> s = new InnerInsertBulk<>(metaData);
             for (T t : ts) {
                 s.add(t);
             }
@@ -1098,7 +1098,7 @@ public class Configure implements ISession {
      * @param useIsNotExist  include string IF NOT EXISTS
      * @return String value
      */
-    public static String getSqlCreateTable(Class aClass, boolean useIsNotExist) {
+    public static String getSqlCreateTable(Class<?> aClass, boolean useIsNotExist) {
         String s = null;
         if (useIsNotExist) {
             s = "IF NOT EXISTS";
