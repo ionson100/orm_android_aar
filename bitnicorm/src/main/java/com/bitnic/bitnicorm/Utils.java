@@ -1,6 +1,8 @@
 package com.bitnic.bitnicorm;
 //./gradlew :bitnicorm:assembleRelease
 
+import static com.bitnic.bitnicorm.UtilsHelper.bytesToHex;
+
 import android.content.ContentValues;
 import android.database.Cursor;
 
@@ -20,6 +22,67 @@ import java.util.Map;
 class Utils {
 
     private Utils(){}
+
+    static String[] parametrize(Object... objects) {
+        String[] str = null;
+        if (objects.length > 0) {
+            str = new String[objects.length];
+            for (int i = 0; i < objects.length; i++) {
+                if (objects[i] instanceof byte[]) {
+
+                    String hexString = bytesToHex((byte[]) objects[i]);
+                    String strCore = "0x" + hexString;
+                    str[i] = strCore;
+                } else {
+                    var s = String.valueOf(objects[i]);
+                    str[i] = s;
+                }
+            }
+        }
+        return str;
+    }
+
+    static <T> String whereBuilderRaw(String where, CacheMetaData<T> data) {
+
+        if (where == null || where.trim().isEmpty()) {
+            where = "";
+        }
+        if ((data.where == null || data.where.trim().isEmpty()) && where.isEmpty()) {
+            return "";
+        }
+        if ((data.where == null || data.where.trim().isEmpty()) && !where.isEmpty()) {
+            return "WHERE " + where;
+        }
+
+        String t = "";
+        if (data.where != null) {
+            t = data.where;
+        }
+        return " WHERE " + t + ((where.trim().isEmpty()) ? " " : " and " + where) + " ";
+
+
+    }
+
+    static <T> String whereBuilder(String where, CacheMetaData<T> data) {
+
+        if (where == null || where.trim().isEmpty()) {
+            where = "";
+        }
+        if ((data.where == null || data.where.trim().isEmpty()) && where.isEmpty()) {
+            return "";
+        }
+        if ((data.where == null || data.where.trim().isEmpty()) && !where.isEmpty()) {
+            return where;
+        }
+        String t = "";
+        if (data.where != null) {
+            t = data.where;
+        }
+
+        return " " + t + ((where.trim().isEmpty()) ? " " : " and " + where) + " ";
+
+
+    }
 
     public static String getStringInsert(String tableName,ContentValues contentValues){
         if(Configure.IsWriteLog){

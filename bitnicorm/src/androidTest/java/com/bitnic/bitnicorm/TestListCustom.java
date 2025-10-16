@@ -1,18 +1,16 @@
 package com.bitnic.bitnicorm;
 
 
-import static com.bitnic.bitnicorm.UtilsCompound.Compound;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -136,11 +134,131 @@ public class TestListCustom extends BaseTestClass {
     }
 
     @Test
-    public void TestIterator(){
+    public void TestFilling(){
         initConfig();
+
+        ISession session = Configure.getSession();
+        try {
+            session.dropTableIfExists(TableUser.class);
+            session.createTableIfNotExists(TableUser.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        for (int i = 0; i < 5; i++) {
+            session.insert(new TableUser());
+        }
+
+        List<TableUser> list=new ArrayList<>();
+        var sql="select * from "+session.getTableName(TableUser.class)+";";
+        Log.i("--------------",sql);
+        try (Cursor cursor = session.execSQLRaw(sql)) {
+
+            if (cursor.moveToFirst()) {
+                do {
+                    TableUser u=  session.objectFiller(TableUser.class, cursor);
+                    list.add(u);
+                } while (cursor.moveToNext());
+            }
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+        assertTrue(list.size()==5);
+        list.forEach(tableUser -> {
+            Log.i("------",tableUser.name);
+        });
 
 
     }
+    static class TestFilling {
+        public String name;
+        public int age;
+    }
+    @Test
+    public void TestFilling2(){
+        initConfig();
+
+        ISession session = Configure.getSession();
+        try {
+            session.dropTableIfExists(TableUser.class);
+            session.createTableIfNotExists(TableUser.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        for (int i = 0; i < 5; i++) {
+            session.insert(new TableUser());
+        }
+
+        List<TestFilling> list=new ArrayList<>();
+        var sql="select name, age from "+session.getTableName(TableUser.class)+";";
+        Log.i("--------------",sql);
+        try (Cursor cursor = session.execSQLRaw(sql)) {
+
+            if (cursor.moveToFirst()) {
+                do {
+                    TestFilling u=  session.objectFiller(TestFilling.class, cursor);
+                    list.add(u);
+                } while (cursor.moveToNext());
+            }
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+        assertTrue(list.size()==5);
+        list.forEach(tableUser -> {
+            Log.i("------",tableUser.name);
+        });
+
+
+    }
+
+    @Test
+    public void TestFillingLocaleClass(){
+        initConfig();
+
+        ISession session = Configure.getSession();
+        try {
+            session.dropTableIfExists(TableUser.class);
+            session.createTableIfNotExists(TableUser.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        for (int i = 0; i < 5; i++) {
+            session.insert(new TableUser());
+        }
+         class TestFilling2 {
+            public String name;
+            public int age;
+        }
+
+        List<TestFilling2> list=new ArrayList<>();
+        var sql="select name, age from "+session.getTableName(TableUser.class)+";";
+        Log.i("--------------",sql);
+        try (Cursor cursor = session.execSQLRaw(sql)) {
+
+            if (cursor.moveToFirst()) {
+                do {
+                    TestFilling2 testFilling2=new TestFilling2();
+                    session.objectFiller(cursor,testFilling2);
+                    list.add(testFilling2);
+                } while (cursor.moveToNext());
+            }
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+        assertTrue(list.size()==5);
+        list.forEach(tableUser -> {
+            Log.i("------",tableUser.name);
+        });
+
+
+    }
+
+
 
 
 }

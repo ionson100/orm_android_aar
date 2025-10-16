@@ -5,7 +5,10 @@ package com.bitnic.bitnicorm;
  * ******************************************************************/
 
 import static com.bitnic.bitnicorm.Utils.getStringListSqlCreateTable;
+import static com.bitnic.bitnicorm.Utils.parametrize;
 import static com.bitnic.bitnicorm.Utils.partition;
+import static com.bitnic.bitnicorm.Utils.whereBuilder;
+import static com.bitnic.bitnicorm.Utils.whereBuilderRaw;
 import static com.bitnic.bitnicorm.UtilsCompound.builderInstance;
 import static com.bitnic.bitnicorm.UtilsContentValues.checkFieldValue;
 import static com.bitnic.bitnicorm.UtilsHelper.bytesToHex;
@@ -159,18 +162,19 @@ public class Configure implements ISession {
     }
 
     private <T> void createTableInner(Class<T> aClass, String ifNotExist) throws Exception {
-        CacheMetaData<T> data = getCacheMetaData(aClass);
-        if(data.isTableReadOnly){
+        CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"createTable","aClass");
+        if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
-        if (data.keyColumn == null) {
+        if (metaData.keyColumn == null) {
             String msg = aClass.getName() + ": Поле первичного ключа отсутствует.";
 
             throw new Exception(msg);
         }
 
-        List<String> sqlList = getStringListSqlCreateTable(ifNotExist, data);
-        getStringAppend(data, sqlList);
+        List<String> sqlList = getStringListSqlCreateTable(ifNotExist, metaData);
+        getStringAppend(metaData, sqlList);
         String curSql = null;
         try {
             for (String sqlOne : sqlList) {
@@ -219,10 +223,11 @@ public class Configure implements ISession {
 
     @Override
     public <T> int count(@NonNull Class<T> aClass, String where, Object... objects) {
-        CacheMetaData<T> d = getCacheMetaData(aClass);
-        where = whereBuilderRaw(where, d);
+        CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"count","aClass");
+        where = whereBuilderRaw(where, metaData);
 
-        String sql = MessageFormat.format("SELECT COUNT(*) FROM {0} {1};", d.tableName, where);
+        String sql = MessageFormat.format("SELECT COUNT(*) FROM {0} {1};", metaData.tableName, where);
         return (int) executeScalar(sql, objects);
     }
 
@@ -233,39 +238,41 @@ public class Configure implements ISession {
 
     @Override
     public <T> boolean any(@NonNull Class<T> aClass, String where, Object... objects) {
-        CacheMetaData<T> d = getCacheMetaData(aClass);
-        where = whereBuilderRaw(where, d);
-        String sql = MessageFormat.format(" SELECT EXISTS ( select * from {0}  {1});", d.tableName, where);
+        CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"any","aClass");
+        where = whereBuilderRaw(where, metaData);
+        String sql = MessageFormat.format(" SELECT EXISTS ( select * from {0}  {1});", metaData.tableName, where);
         int res = (int) executeScalar(sql, objects);
         return res == 1;
     }
 
     @Override
     public <T> int update(@NonNull T item) {
-        CacheMetaData<T> d = getCacheMetaData(item.getClass());
-        if(d.isTableReadOnly){
+        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+        checkingUsageType(metaData,"update","item");
+        if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
-        if(d.isPersistent){
+        if(metaData.isPersistent){
             if(!((Persistent)item).isPersistent){
                 throw new RuntimeException("You are trying to update a non-persistent object that is not in the database.");
             }
         }
-        ContentValues contentValues =getInnerContentValues(item,d);
+        ContentValues contentValues =getInnerContentValues(item,metaData);
         int res;
         try {
-            if (d.isIAction) {
+            if (metaData.isIAction) {
                 ((IEventOrm) item).beforeUpdate();
             }
-            Object key = d.keyColumn.field.get(item);
-            String where = whereBuilder(d.keyColumn.columnName + " = ?", d);
+            Object key = metaData.keyColumn.field.get(item);
+            String where = whereBuilder(metaData.keyColumn.columnName + " = ?", metaData);
             String[] param = new String[]{String.valueOf(key)};
-            res=sqLiteDatabaseForWritable.update(d.tableName, contentValues, where, param);
-            Logger.I(Utils.getStringUpdate(d.tableName,contentValues,where));
-            if(d.isPersistent){
+            res=sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
+            Logger.I(Utils.getStringUpdate(metaData.tableName,contentValues,where));
+            if(metaData.isPersistent){
                 ((Persistent)item).isPersistent=true;
             }
-            if (d.isIAction) {
+            if (metaData.isIAction) {
                 ((IEventOrm) item).afterUpdate();
             }
         } catch (Exception e) {
@@ -277,32 +284,33 @@ public class Configure implements ISession {
 
     @Override
     public <T> void insert(@NonNull T item) {
-        CacheMetaData<T> d = getCacheMetaData(item.getClass());
-        if(d.isTableReadOnly){
+        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+        checkingUsageType(metaData,"insert","item");
+        if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
-        if(d.isPersistent){
+        if(metaData.isPersistent){
             var per=((Persistent)item);
             if(per.isPersistent){
                 throw new RuntimeException("You are trying to insert an object into the database that was previously retrieved from the database, which is not very logical.");
             }
         }
 
-        if (d.isIAction) {
+        if (metaData.isIAction) {
             ((IEventOrm) item).beforeInsert();
         }
-        ContentValues contentValues =getInnerContentValues(item,d);
+        ContentValues contentValues =getInnerContentValues(item,metaData);
         boolean runTransaction = false;
-        if (!sqLiteDatabaseForWritable.inTransaction() && !d.keyColumn.isAssigned) {
+        if (!sqLiteDatabaseForWritable.inTransaction() && !metaData.keyColumn.isAssigned) {
             beginTransaction();
             runTransaction = true;
         }
         try {
-            sqLiteDatabaseForWritable.insertOrThrow(d.tableName, null, contentValues);
-            Logger.I(Utils.getStringInsert(d.tableName,contentValues));
-            if (!d.keyColumn.isAssigned) {
+            sqLiteDatabaseForWritable.insertOrThrow(metaData.tableName, null, contentValues);
+            Logger.I(Utils.getStringInsert(metaData.tableName,contentValues));
+            if (!metaData.keyColumn.isAssigned) {
                 var id = executeScalar("SELECT last_insert_rowid();");
-                d.keyColumn.field.set(item, id);
+                metaData.keyColumn.field.set(item, id);
             }
             if (runTransaction) {
                 commitTransaction();
@@ -314,10 +322,10 @@ public class Configure implements ISession {
                 endTransaction();
             }
         }
-        if(d.isPersistent){
+        if(metaData.isPersistent){
             ((Persistent)item).isPersistent=true;
         }
-        if (d.isIAction) {
+        if (metaData.isIAction) {
             ((IEventOrm) item).afterInsert();
         }
 
@@ -327,6 +335,7 @@ public class Configure implements ISession {
     public <T> int delete(@NonNull T item) {
 
         CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+        checkingUsageType(metaData,"delete","item");
         if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
@@ -360,6 +369,7 @@ public class Configure implements ISession {
     public <T> int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... objects) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"updateRows","aClass");
         if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
@@ -371,47 +381,7 @@ public class Configure implements ISession {
 
     }
 
-    static <T> String whereBuilderRaw(String where, CacheMetaData<T> data) {
 
-        if (where == null || where.trim().isEmpty()) {
-            where = "";
-        }
-        if ((data.where == null || data.where.trim().isEmpty()) && where.isEmpty()) {
-            return "";
-        }
-        if ((data.where == null || data.where.trim().isEmpty()) && !where.isEmpty()) {
-            return "WHERE " + where;
-        }
-
-        String t = "";
-        if (data.where != null) {
-            t = data.where;
-        }
-        return " WHERE " + t + ((where.trim().isEmpty()) ? " " : " and " + where) + " ";
-
-
-    }
-
-    static <T> String whereBuilder(String where, CacheMetaData<T> data) {
-
-        if (where == null || where.trim().isEmpty()) {
-            where = "";
-        }
-        if ((data.where == null || data.where.trim().isEmpty()) && where.isEmpty()) {
-            return "";
-        }
-        if ((data.where == null || data.where.trim().isEmpty()) && !where.isEmpty()) {
-            return where;
-        }
-        String t = "";
-        if (data.where != null) {
-            t = data.where;
-        }
-
-        return " " + t + ((where.trim().isEmpty()) ? " " : " and " + where) + " ";
-
-
-    }
 
     public <T> List<T> getList(@NonNull Class<T> aClass) {
         return getList(aClass, null);
@@ -421,6 +391,7 @@ public class Configure implements ISession {
     public <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... objects) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"getList","aClass");
         where = whereBuilder(where, metaData);
 
 
@@ -449,7 +420,8 @@ public class Configure implements ISession {
 
     @Override
     public <T> List<T> getListFree(@NonNull Class<T> aClass, String sql, Object... objects) {
-        CacheMetaData<?> metaDataFree = CacheDictionary.getCacheMetaData(aClass);
+        CacheMetaData<?> metaData = CacheDictionary.getCacheMetaData(aClass);
+
 
         Logger.I(sql);
         List<T> list=new ArrayList<>();
@@ -458,7 +430,7 @@ public class Configure implements ISession {
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
-                    builderInstance(metaDataFree,cursor,instance);
+                    builderInstance(metaData,cursor,instance);
                     list.add(instance);
                 } while (cursor.moveToNext());
             }
@@ -473,6 +445,7 @@ public class Configure implements ISession {
     public <T> T firstOrDefault(@NonNull Class<T> aClass, String where, Object... objects) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"firstOrDefault","aClass");
         where = whereBuilder(where, metaData);
         String sql = SelectBuilder.getSqlLimit(metaData, where, 1);
 
@@ -506,7 +479,9 @@ public class Configure implements ISession {
     @Override
     public <T> T single(@NonNull Class<T> aClass, String where, Object... objects) throws Exception {
 
+
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"single","aClass");
         where = whereBuilder(where, metaData);
         String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
         Logger.I(sql);
@@ -543,6 +518,7 @@ public class Configure implements ISession {
     public <T> T singleOrDefault(@NonNull Class<T> aClass, String where, Object... objects) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"singleOrDefault","aClass");
         where = whereBuilder(where, metaData);
         String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
         Logger.I(sql);
@@ -573,40 +549,19 @@ public class Configure implements ISession {
 
     }
 
-    static String[] parametrize(Object... objects) {
-        String[] str = null;
-        if (objects.length > 0) {
-            str = new String[objects.length];
-            for (int i = 0; i < objects.length; i++) {
-                if (objects[i] instanceof byte[]) {
 
-                    String hexString = bytesToHex((byte[]) objects[i]);
-                    String strt = "0x" + hexString;
-                    str[i] = strt;
-                } else {
-                    var s = String.valueOf(objects[i]);
-                    str[i] = s;
-                }
-
-            }
-
-        }
-        return str;
-    }
 
 
 
     @Override
     public <T, D> List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects) {
+
         List<D> list;
-
-
-
-            CacheMetaData<T> metaData = getCacheMetaData(aClass);
-            where = whereBuilder(where, metaData);
-
-            String[] sdd = new String[]{Utils.clearStringTrimRaw(columnName)};
-            String[] str = parametrize(objects);
+        CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"getListSelect","aClass");
+        where = whereBuilder(where, metaData);
+        String[] sdd = new String[]{Utils.clearStringTrimRaw(columnName)};
+        String[] str = parametrize(objects);
         try (Cursor cursor = sqLiteDatabaseForReadable.query(metaData.tableName, sdd, where, str, null, null, null, null)) {
             list = new ArrayList<>(cursor.getCount());
             Logger.printSql(cursor);
@@ -656,6 +611,7 @@ public class Configure implements ISession {
             throw new ArithmeticException("Parameter columnName, empty or is null,");
         }
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"groupBy","aClass");
         boolean isthis = false;
         for (int i = 0; i < metaData.listColumn.size(); i++) {
             ItemField field = metaData.listColumn.get(i);
@@ -713,6 +669,7 @@ public class Configure implements ISession {
             throw new ArithmeticException("Parameter columnName, empty or is null,");
         }
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"distinctBy","aClass");
         boolean isthis = false;
         for (int i = 0; i < metaData.listColumn.size(); i++) {
             ItemField field = metaData.listColumn.get(i);
@@ -751,6 +708,7 @@ public class Configure implements ISession {
     @Override
     public <T> ContentValues getContentValues(@NonNull T item) {
         CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+        checkingUsageType(metaData,"getContentValues","item");
         return getInnerContentValues(item,metaData);
 
     }
@@ -758,12 +716,14 @@ public class Configure implements ISession {
     @Override
     public <T> ContentValues getContentValuesForUpdate(@NonNull Class<T> aClass, PairColumnValue columnValues) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"getContentValuesForUpdate","aClass");
         return getInnerContentValuesForUpdate(metaData,columnValues);
     }
 
     @Override
     public <T> int save(@NonNull T item) {
         CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+        checkingUsageType(metaData,"save","item");
         if(!metaData.isPersistent){
             throw new RuntimeException("An object of type "+item.getClass()+" does not inherit the class Persistent");
         }
@@ -776,10 +736,11 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> void objectFiller(Class<T> aClass, Cursor cursor) throws Exception {
+    public <T> T objectFiller(Class<T> aClass, Cursor cursor) throws Exception {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        T t= (T) aClass.getClass().newInstance();
-        builderInstance(metaData,cursor,t);
+        T instance = aClass.newInstance();
+        builderInstance(metaData,cursor,instance);
+        return instance;
     }
 
     @Override
@@ -835,6 +796,8 @@ public class Configure implements ISession {
 
         });
         var metaData=getCacheMetaData(tList.get(0).getClass());
+
+        checkingUsageType(metaData,"insetBulk","item of lis");
         if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
@@ -903,6 +866,7 @@ public class Configure implements ISession {
     public <T> int deleteRows(@NonNull Class<T> aClass) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"deleteRows","aClass");
         if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
@@ -914,6 +878,7 @@ public class Configure implements ISession {
     @Override
     public <T> int deleteRows(@NonNull Class<T> aClass,  String where, Object... objects) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"deleteRows","aClass");
         if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
         }
@@ -948,6 +913,7 @@ public class Configure implements ISession {
     @Override
     public <T> void dropTableIfExists(@NonNull Class<T> aClass) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
+        checkingUsageType(metaData,"dropTableIfExists","aClass");
 
         if(metaData.isTableReadOnly){
             throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
@@ -1062,6 +1028,11 @@ public class Configure implements ISession {
         }
         if (sqLiteDatabaseForReadable != null && sqLiteDatabaseForReadable.isOpen()) {
             sqLiteDatabaseForReadable.close();
+        }
+    }
+    private void checkingUsageType(CacheMetaData<?> metaData,String methodName,String parameterName){
+        if(metaData.isFreeClass){
+            throw new RuntimeException(MessageFormat.format("In the update {0}, in the {1} parameter, a type must be used whose class has annotated markup.", methodName, parameterName));
         }
     }
 }

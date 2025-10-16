@@ -228,13 +228,14 @@ public interface ISession extends Closeable {
      */
     <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... objects);
 
-    /**
+    /** Gets a typed list of objects associated with a selection from a table.
+     *  The type class must contain fields that match the names of the table columns. These fields must have the expected type.
      * @param aClass Any class of type, the class must have fields that match the table column names
      *               and the same type of fields that you expect to get from the database table.
      * @param sql Full SQL request, you can specify parameters
      * @param objects A collection of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
      * @param <T> Custom type, may not contain table annotations
-     * @return List of objects of type <T>
+     * @return List of objects of type T
      */
     <T> List<T> getListFree(@NonNull Class<T> aClass,String sql, Object... objects);
 
@@ -954,8 +955,25 @@ public interface ISession extends Closeable {
      */
     <T> int save(@NonNull T item);
 
-   <T> void objectFiller(Class<T> aClass, Cursor cursor) throws Exception;
+    /** Creates an object in one iteration of the cursor,
+     * the type must have fields whose names must match the names of the columns in the selection
+     * The type must have a public parameterless constructor.
+     * @param aClass Any class of type, the class must have fields that match the table column names
+     *               and the same type of fields that you expect to get from the database table.
+     * @param cursor @see <a href="https://developer.android.com/reference/android/database/Cursor">Cursor</a>
+     * @param <T> Custom type, may not contain table annotations
+     * @return Filled object
+     * @throws Exception Possible type conversion error
+     */
+   <T> T objectFiller(Class<T> aClass, Cursor cursor) throws Exception;
 
+    /**
+     * Filling an object in one cursor iteration, the name of the object fields must match the fields of the table in the selection
+     * @param cursor @see <a href="https://developer.android.com/reference/android/database/Cursor">Cursor</a>
+     * @param instance Object to fill
+     * @param <T> Custom type, may not contain table annotations
+     * @throws Exception Possible type conversion error
+     */
     <T> void objectFiller(Cursor cursor, T instance) throws Exception;
 
 }

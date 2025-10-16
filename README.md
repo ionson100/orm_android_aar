@@ -1,40 +1,40 @@
 ### Еще одна ORM для андроида
 [Быстрый старт](#start)
 
-| Маппинг                                                       | ISession                                           |
-|---------------------------------------------------------------|----------------------------------------------------|
-| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                                  |
-| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                                  |
-| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                                  |
-| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)                          |
-| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)                          |
-| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                          |
-| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                |
-| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                    |
-| [@MapForeignKey](#@MapForeignKey)                             |                 |
-| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                  |
-| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                    |
-|                                                               | [singleOrDefault](#singleOrDefault)                |
-| [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                          |
-|                                                               | [groupBy](#groupBy)                                |
-|                                                               | [executeScalar](#executeScalar)                    |
-|                                                               | [executeSQL](#executeSQL)                          |
-|                                                               | [any](#any)                                        |
-|                                                               | [tableExists](#tableExists)                        |
-|                                                               | [getTableName](#getTableName)                      |
-|                                                               | [createTable](#createTable)                        |
-|                                                               | [createTableIfNotExists](#createTableIfNotExists)  |
-|                                                               | [dropTableIfExists](#dropTableIfExists)            |
-|                                                               | [getPath](#getPath)                                |
-|                                                               | [IsAlive](#IsAlive)                                |
+| Маппинг                                                       | ISession                                                |
+|---------------------------------------------------------------|---------------------------------------------------------|
+| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                                       |
+| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                                       |
+| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                                       |
+| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)                               |
+| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)                               |
+| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                               |
+| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                     |
+| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                         |
+| [@MapForeignKey](#@MapForeignKey)                             |                                                         |
+| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                       |
+| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                         |
+|                                                               | [singleOrDefault](#singleOrDefault)                     |
+| [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                               |
+| [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                     |
+| [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                         |
+|                                                               | [executeSQL](#executeSQL)                               |
+|                                                               | [any](#any)                                             |
+|                                                               | [tableExists](#tableExists)                             |
+|                                                               | [getTableName](#getTableName)                           |
+|                                                               | [createTable](#createTable)                             |
+|                                                               | [createTableIfNotExists](#createTableIfNotExists)       |
+|                                                               | [dropTableIfExists](#dropTableIfExists)                 |
+|                                                               | [getPath](#getPath)                                     |
+|                                                               | [IsAlive](#IsAlive)                                     |
 |                                                               | [SqLiteDatabaseForWritable](#SqLiteDatabaseForWritable) |
 |                                                               | [SqLiteDatabaseForReadable](#SqLiteDatabaseForReadable) |
-|                                                               | [getContentValues](#getContentValues)              |
+|                                                               | [getContentValues](#getContentValues)                   |
 |                                                               | [getContentValuesForUpdate](#getContentValuesForUpdate) |
-|                                                               | [save](#save)                                      |
-|                                                               | [](#)                                              |
-|                                                               | [](#)                                              |
-|                                                               | [](#)                                              |
+|                                                               | [save](#save)                                           |
+|                                                               | [objectFiller](#objectFiller)                           |
+|                                                               | [](#)                                                   |
+|                                                               | [](#)                                                   |
 
 
 Написана java 11.\
