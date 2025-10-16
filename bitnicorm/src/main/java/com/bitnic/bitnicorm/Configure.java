@@ -11,7 +11,6 @@ import static com.bitnic.bitnicorm.Utils.whereBuilder;
 import static com.bitnic.bitnicorm.Utils.whereBuilderRaw;
 import static com.bitnic.bitnicorm.UtilsCompound.builderInstance;
 import static com.bitnic.bitnicorm.UtilsContentValues.checkFieldValue;
-import static com.bitnic.bitnicorm.UtilsHelper.bytesToHex;
 
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
@@ -222,13 +221,13 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> int count(@NonNull Class<T> aClass, String where, Object... objects) {
+    public <T> int count(@NonNull Class<T> aClass, String where, Object... parameters) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"count","aClass");
         where = whereBuilderRaw(where, metaData);
 
         String sql = MessageFormat.format("SELECT COUNT(*) FROM {0} {1};", metaData.tableName, where);
-        return (int) executeScalar(sql, objects);
+        return (int) executeScalar(sql, parameters);
     }
 
     @Override
@@ -237,12 +236,12 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> boolean any(@NonNull Class<T> aClass, String where, Object... objects) {
+    public <T> boolean any(@NonNull Class<T> aClass, String where, Object... parameters) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"any","aClass");
         where = whereBuilderRaw(where, metaData);
         String sql = MessageFormat.format(" SELECT EXISTS ( select * from {0}  {1});", metaData.tableName, where);
-        int res = (int) executeScalar(sql, objects);
+        int res = (int) executeScalar(sql, parameters);
         return res == 1;
     }
 
@@ -280,6 +279,47 @@ public class Configure implements ISession {
         }
         return res;
 
+    }
+
+    @Override
+    public <T> int update(@NonNull T item, String appendWhere, Object... parameters) {
+        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+        checkingUsageType(metaData,"update","item");
+        if(metaData.isTableReadOnly){
+            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+        }
+        if(metaData.isPersistent){
+            if(!((Persistent)item).isPersistent){
+                throw new RuntimeException("You are trying to update a non-persistent object that is not in the database.");
+            }
+        }
+        ContentValues contentValues =getInnerContentValues(item,metaData);
+        int res;
+        try {
+            if (metaData.isIAction) {
+                ((IEventOrm) item).beforeUpdate();
+            }
+            Object key = metaData.keyColumn.field.get(item);
+            String where = whereBuilder(metaData.keyColumn.columnName + " = ?", metaData);
+            if(appendWhere.isEmpty()==false){
+                where=where +" and "+appendWhere;
+            }
+            String[] param = new String[]{String.valueOf(key)};
+            if(parameters.length>0){
+               param= parametrize(key, parameters);
+            }
+            res=sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
+            Logger.I(Utils.getStringUpdate(metaData.tableName,contentValues,where));
+            if(metaData.isPersistent){
+                ((Persistent)item).isPersistent=true;
+            }
+            if (metaData.isIAction) {
+                ((IEventOrm) item).afterUpdate();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return res;
     }
 
     @Override
@@ -366,7 +406,7 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... objects) {
+    public <T> int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... parameters) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"updateRows","aClass");
@@ -377,7 +417,7 @@ public class Configure implements ISession {
         ContentValues contentValues =  getInnerContentValuesForUpdate(metaData,columnValues);
         Logger.I("UPDATEALL WHERE: " + where);
         Logger.I(Utils.getStringUpdate(metaData.tableName,contentValues,where));
-        return sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, parametrize(objects));
+        return sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, parametrize(parameters));
 
     }
 
@@ -388,7 +428,7 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... objects) {
+    public <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... parameters) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"getList","aClass");
@@ -397,7 +437,7 @@ public class Configure implements ISession {
 
         String sql = SelectBuilder.getSql(metaData, where);
         List<T> list;
-        try (Cursor cursor = execSQLRaw(sql, objects)) {
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
             list = new ArrayList<>();
             if (cursor.moveToFirst()) {
                 do {
@@ -419,13 +459,13 @@ public class Configure implements ISession {
 
 
     @Override
-    public <T> List<T> getListFree(@NonNull Class<T> aClass, String sql, Object... objects) {
+    public <T> List<T> getListFree(@NonNull Class<T> aClass, String sql, Object... parameters) {
         CacheMetaData<?> metaData = CacheDictionary.getCacheMetaData(aClass);
 
 
         Logger.I(sql);
         List<T> list=new ArrayList<>();
-        try (Cursor cursor = execSQLRaw(sql, objects)) {
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
 
             if (cursor.moveToFirst()) {
                 do {
@@ -442,7 +482,7 @@ public class Configure implements ISession {
 
 
     @Override
-    public <T> T firstOrDefault(@NonNull Class<T> aClass, String where, Object... objects) {
+    public <T> T firstOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"firstOrDefault","aClass");
@@ -450,7 +490,7 @@ public class Configure implements ISession {
         String sql = SelectBuilder.getSqlLimit(metaData, where, 1);
 
 
-        try (Cursor cursor = execSQLRaw(sql, objects)) {
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
             if (cursor.moveToFirst()) {
                 T instance = aClass.newInstance();
                 if (metaData.isPersistent) {
@@ -468,8 +508,8 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> T first(@NonNull Class<T> aClass, String where, Object... objects) throws Exception {
-        T t = firstOrDefault(aClass, where, objects);
+    public <T> T first(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception {
+        T t = firstOrDefault(aClass, where, parameters);
         if (t == null) {
             throw new Exception("!!!The sample did not yield any results.");
         }
@@ -477,7 +517,7 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> T single(@NonNull Class<T> aClass, String where, Object... objects) throws Exception {
+    public <T> T single(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception {
 
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
@@ -488,7 +528,7 @@ public class Configure implements ISession {
         Object[] resultArray = new Object[]{null, null};
         int index = 0;
 
-        try (Cursor cursor = execSQLRaw(sql, objects)) {
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
@@ -515,7 +555,7 @@ public class Configure implements ISession {
 
 
     @Override
-    public <T> T singleOrDefault(@NonNull Class<T> aClass, String where, Object... objects) {
+    public <T> T singleOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) {
 
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"singleOrDefault","aClass");
@@ -525,7 +565,7 @@ public class Configure implements ISession {
         Object[] resultArray = new Object[]{null, null};
         int index = 0;
 
-        try (Cursor cursor = execSQLRaw(sql, objects)) {
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
             if (cursor.moveToFirst()) {
                 do {
                     T instance = aClass.newInstance();
@@ -554,14 +594,14 @@ public class Configure implements ISession {
 
 
     @Override
-    public <T, D> List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects) {
+    public <T, D> List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... parameters) {
 
         List<D> list;
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"getListSelect","aClass");
         where = whereBuilder(where, metaData);
         String[] sdd = new String[]{Utils.clearStringTrimRaw(columnName)};
-        String[] str = parametrize(objects);
+        String[] str = parametrize(parameters);
         try (Cursor cursor = sqLiteDatabaseForReadable.query(metaData.tableName, sdd, where, str, null, null, null, null)) {
             list = new ArrayList<>(cursor.getCount());
             Logger.printSql(cursor);
@@ -606,7 +646,7 @@ public class Configure implements ISession {
 
 
     @Override
-    public <T> Map<Object, List<T>> groupBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... objects) {
+    public <T> Map<Object, List<T>> groupBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) {
         if (columnName.isEmpty()) {
             throw new ArithmeticException("Parameter columnName, empty or is null,");
         }
@@ -628,7 +668,7 @@ public class Configure implements ISession {
 
         String sql = SelectBuilder.getSql(metaData, where);
         Map<Object, List<T>> map;
-        try (Cursor cursor = execSQLRaw(sql, objects)) {
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
             map = new HashMap<>();
             int colimnIndex = -1;
             if (cursor.moveToFirst()) {
@@ -664,7 +704,7 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> List<Object> distinctBy(@NonNull Class<T> aClass, @org.jspecify.annotations.NonNull String columnName, String where, Object... objects) {
+    public <T> List<Object> distinctBy(@NonNull Class<T> aClass, @org.jspecify.annotations.NonNull String columnName, String where, Object... parameters) {
         if (columnName.isEmpty()) {
             throw new ArithmeticException("Parameter columnName, empty or is null,");
         }
@@ -687,7 +727,7 @@ public class Configure implements ISession {
         String sql = SelectBuilder.getSqlDistinct(columnName, metaData, where);
 
         List<Object> objectList;
-        try (Cursor cursor = execSQLRaw(sql, objects)) {
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
             objectList = new ArrayList<>();
             if (cursor.moveToFirst()) {
                 do {
@@ -764,8 +804,8 @@ public class Configure implements ISession {
     }
 
     @Override
-    public Object executeScalar(@NonNull String sql, Object... objects) {
-        String[] array = parametrize(objects);
+    public Object executeScalar(@NonNull String sql, Object... parameters) {
+        String[] array = parametrize(parameters);
         Logger.I(sql);
         return InnerListExe(sql, array);
     }
@@ -777,9 +817,9 @@ public class Configure implements ISession {
     }
 
     @Override
-    public void executeSQL(@NonNull String sql, Object... objects) {
+    public void executeSQL(@NonNull String sql, Object... parameters) {
 
-        sqLiteDatabaseForWritable.execSQL(sql, objects);
+        sqLiteDatabaseForWritable.execSQL(sql, parameters);
         Logger.I(sql);
     }
 
@@ -843,9 +883,9 @@ public class Configure implements ISession {
     }
 
     @Override
-    public Cursor execSQLRaw(@NonNull String sql, Object... objects) {
+    public Cursor execSQLRaw(@NonNull String sql, Object... parameters) {
         try {
-            String[] params = parametrize(objects);
+            String[] params = parametrize(parameters);
             return sqLiteDatabaseForWritable.rawQuery(sql, params);
         } finally {
             Logger.I(sql);
@@ -876,7 +916,7 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> int deleteRows(@NonNull Class<T> aClass,  String where, Object... objects) {
+    public <T> int deleteRows(@NonNull Class<T> aClass,  String where, Object... parameters) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"deleteRows","aClass");
         if(metaData.isTableReadOnly){
@@ -884,7 +924,7 @@ public class Configure implements ISession {
         }
         String tableName = metaData.tableName;
         if (tableName == null || tableName.trim().isEmpty()) return 0;
-        String[] par = parametrize(objects);
+        String[] par = parametrize(parameters);
         where = whereBuilder(where, metaData);
         Logger.I("DELETE FROM " + tableName  + where + Arrays.toString(par));
         return sqLiteDatabaseForWritable.delete(tableName, where, par);
