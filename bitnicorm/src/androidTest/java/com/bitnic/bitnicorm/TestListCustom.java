@@ -43,33 +43,7 @@ public class TestListCustom extends BaseTestClass {
 
         public List<String> stringList2;
     }
-    @Test
-    public void TestList() {
-        initConfig();
-        ISession session = Configure.getSession();
-        try {
-            session.dropTableIfExists(TableMain.class);
-            session.createTableIfNotExists(TableMain.class);
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        for (int i = 0; i < 5; i++) {
-            TableMain t=new TableMain();
-            t.aDouble=0.67D;
-            t.stringList1.add("simple");
-            t.stringList2.add("simple");
-            session.insert(t);
-        }
-        List<TableCustom> list=session.getList(TableMain.class,TableCustom.class," aDouble > 0" );
-        assertTrue(list.size()==5);
-        list.forEach(tableCustom -> {
-            assertTrue(tableCustom.aDouble==0.670D);
-            assertTrue(tableCustom.stringList1.get(0).equals("simple"));
-            assertTrue(tableCustom.stringList2.get(0).equals("simple"));
-        });
-
-    }
     @Test
     public void TestWritable(){
         initConfig();
@@ -165,27 +139,7 @@ public class TestListCustom extends BaseTestClass {
     public void TestIterator(){
         initConfig();
 
-        ISession session = Configure.getSession();
-        try {
-            session.dropTableIfExists(TableUser.class);
-            session.createTableIfNotExists(TableUser.class);
 
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        for (int i = 0; i < 5; i++) {
-            session.insert(new TableUser());
-        }
-        String tableName=session.getTableName(TableUser.class);
-        List<TableUser> list = new ArrayList<>();
-        String sql="SELECT id,name,age,email FROM "+session.getTableName(TableUser.class);
-        Cursor cursor=session.execSQLRaw(sql);
-        session.cursorIterator(TableUser.class,cursor,tableUser -> {
-            list.add(tableUser);
-        });
-
-        assertTrue(list.size()==5);
     }
 
 

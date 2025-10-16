@@ -195,8 +195,6 @@ public interface ISession extends Closeable {
      */
     <T> int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... objects);
 
-
-
     /**
      * Getting a list of rows from a database table based on a condition
      *
@@ -230,83 +228,15 @@ public interface ISession extends Closeable {
      */
     <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... objects);
 
-
-
     /**
-     * @param aClassFrom  Instances of the  represent classes and interfaces in a running Java application.
-     *                This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
-     *                and a public field marked with the primary key annotation.
-     * @param aClassTo This is an arbitrary class type that should not be marked with any annotations.
-     *                 The class field names must match the table class fields. The query will be built on the basis of these fields.
-     * @param where   A fragment of a SQL query script from a condition, where
-     *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
-     *                and parameter values are entered into the object collection in the order they appear in the query.
+     * @param aClass Any class of type, the class must have fields that match the table column names
+     *               and the same type of fields that you expect to get from the database table.
+     * @param sql Full SQL request, you can specify parameters
      * @param objects A collection of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
-     * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     * @param <D> Custom class type
-     * @return list objects of type D
+     * @param <T> Custom type, may not contain table annotations
+     * @return List of objects of type <T>
      */
-    <T,D> List<D> getList(@NonNull Class<T> aClassFrom,@NonNull Class<D> aClassTo, String where, Object... objects);
-
-    /**
-     * @param aClass
-     * @param where
-     * @param objects
-     * @param <T>
-     * @return
-     */
-    <T> List<T> getListFree(@NonNull Class<T> aClass,String tableName, String where, Object... objects);
-
-    /**
-     * Allows you to bypass the selection cursor without creating a result list; on each bypass, a callback function will be called.
-     * @param callback A callback function that will be called each time the course call is traversed
-     * @param aClass  Instances of the  represent classes and interfaces in a running Java application.
-     *                This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
-     *                and a public field marked with the primary key annotation.
-     * @param where   A fragment of a SQL query script from a condition, where
-     *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
-     *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param objects A collection of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
-     * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     */
-    <T> void cursorIterator(@NonNull Class<T> aClass,@NonNull IAction<T> callback, String where, Object... objects);
-
-
-    /**
-     * An iterator for traversing a Cursor with a callback function
-     * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
-     *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
-     *                 and a public field marked with the primary key annotation.
-     * @param cursor   @see <a href="https://developer.android.com/reference/android/database/Cursor">Cursor</a>
-     * @param callback lambda realisation {@link IAction}
-     * @param <T>      The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     * <pre>
-     * {@code
-     *
-     * @MapTable
-     * public class SimpleTable {
-     *     public SimpleTable(){}
-     *     public SimpleTable(String name){
-     *         this.myName = name;
-     *     }
-     *     @MapPrimaryKey
-     *     public long id;
-     *     @MapColumnName("name")
-     *     public String myName;
-     * }
-     * ISession session=Configure.getSession();
-     * var cursor=session.execSQLRaw("select "name" from "+session.getTableName(SimpleTable.class));
-     * List<String> stringList=new ArrayList<>();
-     * session.cursorIterator(SimpleTable.class,cursor,o -> {
-     *   stringList.add(o.name);
-     * });
-     *
-     * }
-     *
-     * </pre>
-     */
-    <T> void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> callback);
-
+    <T> List<T> getListFree(@NonNull Class<T> aClass,String sql, Object... objects);
 
 
     /**
@@ -409,8 +339,6 @@ public interface ISession extends Closeable {
      */
     void executeSQL(@NonNull String sql, Object... objects);
 
-
-
     /**
      * Executing a raw query to the database, obtaining a cursor
      * @param sql     SQL script in raw form, the ability to change values
@@ -436,66 +364,6 @@ public interface ISession extends Closeable {
      * </pre>
      */
     Cursor execSQLRaw(@NonNull String sql, Object... objects);
-
-    /**
-     * Obtaining the resulting sample based on a condition
-     * @param sql     SQL script in raw form, the ability to change values
-     *                with the ? symbol, the observed values must be written to the object parameter, in the order in which they are written in the script.
-     * @param objects A collection of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
-     * @return Dictionary: table column name - column value
-     * <pre>
-     * {@code
-     * @MapTable
-     * public class SimpleTable {
-     *     public SimpleTable(){}
-     *     public SimpleTable(String name){
-     *         this.myName = name;
-     *     }
-     *     @MapPrimaryKey
-     *     public long id;
-     *     @MapColumnName("name")
-     *     public String myName;
-     * }
-     * ISession session=Configure.getSession();
-     * List<Map<String,Object>> res= execSQLRawMap("select mame,id from "+ session.getTableName(SimpleTable.class));
-     * res.forEach(row -> {
-     *  Log.I("---",row.get("name"));
-     *  Log.I("---",row.get("id"));
-     * });
-     * }
-     * </pre>
-     */
-    List<Map<String, Object>> execSQLRawMap(@NonNull String sql, Object... objects);
-
-    /**
-     * Obtaining the resulting sample based on a condition
-     * @param sql     SQL script in raw form, the ability to change values
-     *                with the ? symbol, the observed values must be written to the object parameter, in the order in which they are written in the script.
-     * @param objects A collection of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
-     * @return list Object[]
-     * <pre>
-     * {@code
-     * @MapTable
-     * public class SimpleTable {
-     *     public SimpleTable(){}
-     *     public SimpleTable(String name){
-     *         this.myName = name;
-     *     }
-     *     @MapPrimaryKey
-     *     public long id;
-     *     @MapColumnName("name")
-     *     public String myName;
-     * }
-     * ISession session=Configure.getSession();
-     *  List<Object[]> res= execSQLRawMap("select mame,id from "+ session.getTableName(SimpleTable.class));
-     * res.forEach(row -> {
-     *  Log.I("---",row[0]);//name
-     *  Log.I("---",row[1]);//id
-     * });
-     * }
-     * </pre>
-     */
-    List<Object[]> execSQLRawArray(@NonNull String sql, Object... objects);
 
     /**
      * Getting the table name is usually needed to build a raw query.
@@ -735,8 +603,8 @@ public interface ISession extends Closeable {
     <T> void  createTable(@NonNull Class<T> aClass) throws Exception;
 
     /**
+     *Creates a table if it does not exist.
      *
-     * Creates a table if it does not exist.
      * @param <T>    The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @param aClass Instances of the  represent classes and interfaces in a running Java application.
      *               This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
@@ -1021,7 +889,6 @@ public interface ISession extends Closeable {
      */
     <T, D> List<D> getListSelect(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... objects);
 
-
     /**
      *Obtaining a dictionary of objects grouped by a database table column, with a selection condition
      * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
@@ -1058,7 +925,6 @@ public interface ISession extends Closeable {
      */
     boolean IsAlive();
 
-
     /**
      * Getting object {@link ContentValues} from object DTO. You may need this if you will be working directly with {@link SQLiteDatabase}
      * @param item An object, class type must be marked with annotation @{@link MapTable} or @{@link MapTableName}
@@ -1067,7 +933,6 @@ public interface ISession extends Closeable {
      * @return object {@link ContentValues}
      */
     <T> ContentValues getContentValues(@NonNull T item);
-
 
     /**
      * Getting object {@link ContentValues} You may need this if you will be working directly with {@link SQLiteDatabase}
@@ -1088,5 +953,9 @@ public interface ISession extends Closeable {
      * @return 1-success , 0 - not success
      */
     <T> int save(@NonNull T item);
+
+   <T> void objectFiller(Class<T> aClass, Cursor cursor) throws Exception;
+
+    <T> void objectFiller(Cursor cursor, T instance) throws Exception;
 
 }

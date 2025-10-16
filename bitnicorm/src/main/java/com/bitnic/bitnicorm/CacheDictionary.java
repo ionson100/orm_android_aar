@@ -13,8 +13,8 @@ class CacheDictionary {
     private static final Object lock = new Object();
     private static final Object lockFree = new Object();
 
-    private static final Map<String, CacheMetaData> dic = new Hashtable();
-    private static final Map<String, CacheMetaDataFree> dicFree = new Hashtable();
+    private static final Map<String, CacheMetaData> dic = new Hashtable<>();
+
 
     public static CacheMetaData<?> getCacheMetaDataFromTableName(String tableName)  {
         AtomicReference<CacheMetaData> metaData= new AtomicReference<>();
@@ -27,7 +27,7 @@ class CacheDictionary {
 
     }
 
-    public static CacheMetaData<?> getCacheMetaData(Class aClass)  {
+    public static CacheMetaData<?> getCacheMetaData(Class<?> aClass)  {
         if (dic.get(aClass.getName()) == null) {
             synchronized (lock) {
                 if (dic.get(aClass.getName()) == null) {
@@ -37,15 +37,4 @@ class CacheDictionary {
         }
         return dic.get(aClass.getName());
     }
-    public static CacheMetaDataFree<?> getCacheMetaDataFree(Class aClass)  {
-        if (dicFree.get(aClass.getName()) == null) {
-            synchronized (lockFree) {
-                if (dicFree.get(aClass.getName()) == null) {
-                    dicFree.put(aClass.getName(), new CacheMetaDataFree(aClass));
-                }
-            }
-        }
-        return dicFree.get(aClass.getName());
-    }
-
 }

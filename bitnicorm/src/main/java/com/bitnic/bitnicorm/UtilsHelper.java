@@ -20,6 +20,23 @@ public class UtilsHelper {
 
     private UtilsHelper(){}
 
+    /**
+     * Bytes to HEX string
+     * @param bytes  array byte
+     * @return String
+     */
+    public static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder(2 * bytes.length); // Initialize with estimated capacity
+
+        for (byte b : bytes) {
+            // Convert byte to int, ensuring it's treated as unsigned for hex conversion
+            String hex = String.format("%02X", b);
+            hexString.append(hex);
+        }
+
+        return hexString.toString();
+    }
+
 
     /**
      * Date to string for sqlite format date.

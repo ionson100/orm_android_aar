@@ -6,7 +6,6 @@ package com.bitnic.bitnicorm;
 
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,6 +24,8 @@ class CacheMetaData<T> {
     boolean isTableReadOnly;
     private String[] listSelectColumns = null;
 
+    boolean isFreeClass;
+
 
     public List<String> getListColumnName(){
         return List.of(listSelectColumns);
@@ -42,30 +43,32 @@ class CacheMetaData<T> {
 
 
         isRecursiveSubclassOf(tClass);
-        if(tableName==null||tableName.isEmpty()){
-            throw new RuntimeException("The class does not contain a table name annotation (@MapTableName or MapTable);" +
-                    " such a class cannot be used in ORM.type:"+tClass.getName());
-        }
+        if(tableName!=null){
+            if(tableName.isEmpty()){
+                throw new RuntimeException("The class does not contain a table name annotation (@MapTableName or MapTable);" +
+                        " such a class cannot be used in ORM.type:"+tClass.getName());
+            }
 
-        keyColumn = AnnotationOrm.getKeyColumnItemField(tClass);
+            keyColumn = AnnotationOrm.getKeyColumnItemField(tClass);
 
-        if(keyColumn==null||keyColumn.columnName==null||keyColumn.columnName.isEmpty()){
-            throw new RuntimeException("There was a problem defining the primary key, or you did not specify a field with an annotation, " +
-                    "or you tried to specify an empty value in it. type: "+tClass.getName());
-        }
-        listColumn = AnnotationOrm.getListItemFieldColumn(tClass);
+            if(keyColumn==null||keyColumn.columnName==null||keyColumn.columnName.isEmpty()){
+                throw new RuntimeException("There was a problem defining the primary key, or you did not specify a field with an annotation, " +
+                        "or you tried to specify an empty value in it. type: "+tClass.getName());
+            }
+            listColumn = AnnotationOrm.getListItemFieldColumn(tClass);
 
-        if(listColumn==null||listColumn.isEmpty()){
-            Log.w("---ORM WARNING---","Your class is missing fields to associate with table fields.(@MapColumn or @MapColumnName)  type:"+tClass.getName());
-        }
+            if(listColumn.isEmpty()){
+                Log.w("---ORM WARNING---","Your class is missing fields to associate with table fields.(@MapColumn or @MapColumnName)  type:"+tClass.getName());
+            }
 
-        if (tClass.isAnnotationPresent(MapTableReadOnly.class)) {
-            isTableReadOnly=true;
-        }
+            if (tClass.isAnnotationPresent(MapTableReadOnly.class)) {
+                isTableReadOnly=true;
+            }
 
-        if (listSelectColumns == null) {
 
-            listSelectColumns = new String[listColumn.size() + 1];
+
+            int count=listColumn.size() + 1;
+            listSelectColumns = new String[count];
 
             for (int i = 0; i < listColumn.size(); i++) {
                 listSelectColumns[i] = listColumn.get(i).columnName;
@@ -73,10 +76,42 @@ class CacheMetaData<T> {
             listSelectColumns[listColumn.size()] = keyColumn.columnName;
             listSelectColumns[0] = keyColumn.columnName;
             listSelectColumns[listSelectColumns.length - 1] = listColumn.get(0).columnName;
+
+        }else {
+            isFreeClass=true;
+            isRecursiveSubclassOfFree(tClass);
+            listColumn = AnnotationOrm.getListItemFieldColumnFreeNew(tClass);
+            tableName =tClass.getName();
+            var index=tableName.lastIndexOf(".");
+            if(index!=-1){
+                tableName=Utils.clearStringTrim(tableName.substring(index+1));
+            }else{
+                tableName=Utils.clearStringTrim(tableName);
+            }
+            listSelectColumns = new String[listColumn.size()];
+            for (int i = 0; i < listColumn.size(); i++) {
+                    listSelectColumns[i] = listColumn.get(i).columnName;
+            }
         }
+
+    }
+    String getSelectColumns(){
+
+            StringBuilder stringBuilder=new StringBuilder(listSelectColumns.length);
+            for (int i = 0; i < listSelectColumns.length; i++) {
+                stringBuilder.append(listSelectColumns[i]);
+                if(i<listSelectColumns.length-1){
+                    stringBuilder.append(", ");
+                }
+            }
+
+
+        return stringBuilder.toString();
+
     }
     public String[] getStringSelect() {
         return listSelectColumns;
+
     }
 
     public  void isRecursiveSubclassOf( Class<?> parentClass) {
@@ -111,13 +146,31 @@ class CacheMetaData<T> {
                 if(appendCreateTable==null){
                     appendCreateTable="";
                 }
-                appendCreateTable =appendCreateTable+ Objects.requireNonNull(currentClass.getAnnotation(MapAppendCommandCreateTable.class)).value()+System.lineSeparator();
+                appendCreateTable =appendCreateTable+
+                        Objects.requireNonNull(currentClass.getAnnotation(MapAppendCommandCreateTable.class)).value()+System.lineSeparator();
             }
             if(!isIAction){
                 isIAction=IEventOrm.class.isAssignableFrom(currentClass);
             }
 
 
+            currentClass = currentClass.getSuperclass();
+        }
+
+    }
+
+    public  void isRecursiveSubclassOfFree( Class<?> parentClass) {
+
+        String nameCore=parentClass.getName();
+        Class<?> currentClass = parentClass;
+        while (currentClass != null) {
+            if (currentClass.equals(Persistent.class)) {
+                isPersistent=true;
+            }
+
+            if(!isIAction){
+                isIAction=IEventOrm.class.isAssignableFrom(currentClass);
+            }
             currentClass = currentClass.getSuperclass();
         }
 

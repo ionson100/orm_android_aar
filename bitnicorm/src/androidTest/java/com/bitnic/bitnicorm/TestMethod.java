@@ -225,16 +225,7 @@ public class TestMethod extends BaseTestClass {
     @Test
     public void TestRawExecute() {
         preInit();
-        ISession session = Configure.getSession();
-        session.deleteRows(MyTable.class);
-        for (int i = 0; i < 10; i++) {
-            session.insert(factoryTable());
-        }
-        var cursor = session.execSQLRaw("select name from " + session.getTableName(MyTable.class));
-        List<String> stringList = new ArrayList<>();
-        session.cursorIterator(MyTable.class, cursor, o -> stringList.add(o.name));
-        assertEquals(10, stringList.size());
-        stringList.forEach(s -> assertEquals("name", s));
+
     }
 
     static class tempName {
@@ -248,16 +239,7 @@ public class TestMethod extends BaseTestClass {
     @Test
     public void TestRawExecute2() {
         preInit();
-        ISession session = Configure.getSession();
-        session.deleteRows(MyTable.class);
-        for (int i = 0; i < 10; i++) {
-            session.insert(factoryTable());
-        }
-        var cursor = session.execSQLRaw("select name as 'myName' from " + session.getTableName(MyTable.class));
-        List<tempName> stringList = new ArrayList<>();
-        session.cursorIterator(tempName.class, cursor, stringList::add);
-        assertEquals(10, stringList.size());
-        stringList.forEach(s -> assertEquals("name", s.myName));
+
     }
 
     @MapTable
@@ -270,57 +252,8 @@ public class TestMethod extends BaseTestClass {
         public float mFloat = 3.3F;
     }
 
-    @Test
-    public void TestCursorRowAsMap() {
-        preInit();
-        ISession session = Configure.getSession();
-        try {
-            session.createTableIfNotExists(MFloat.class);
-            session.deleteRows(MFloat.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
 
-        for (int i = 0; i < 1; i++) {
-            var t = new MFloat();
-            t.name = "name";
-            t.mFloat = 22F;
-            session.insert(t);
-        }
 
-        var list = session.execSQLRawMap("select name, mFloat from 'TestMethod$MFloat'");
-        assertEquals(1, list.size());
-
-        list.forEach(row -> {
-            assertEquals("name", row.get("name"));
-            assertEquals(22.0F, row.get("mFloat"));
-        });
-    }
-
-    @Test
-    public void TestCursorRowAsArray() {
-        preInit();
-        ISession session = Configure.getSession();
-        try {
-            session.createTableIfNotExists(MFloat.class);
-            session.deleteRows(MFloat.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        for (int i = 0; i < 1; i++) {
-            var t = new MFloat();
-            t.name = "name";
-            t.mFloat = 22F;
-            session.insert(t);
-        }
-        var list = session.execSQLRawArray("select name, mFloat from 'TestMethod$MFloat'");
-        assertEquals(1, list.size());
-        list.forEach(row -> {
-            assertEquals("name", row[0]);
-            assertEquals(22.0F, row[1]);
-        });
-    }
 
     @Test
     public void TestDropTable() {
@@ -2344,32 +2277,7 @@ public class TestMethod extends BaseTestClass {
     @Test
     public void TestCursorIterator() {
         preInit();
-        ISession session = Configure.getSession();
-        session.dropTableIfExists(TableForIterator.class);
 
-        try {
-            session.createTableIfNotExists(TableForIterator.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        for (int i = 0; i < 10; i++) {
-            TableForIterator t=new TableForIterator();
-            t.name="simple";
-            t.children=new Children();
-            t.uuid=UUID.randomUUID();
-            session.insert(t);
-        }
-        var cursor = session.execSQLRaw("select * from " + session.getTableName(TableForIterator.class));
-        List<TableGetter> stringList = new ArrayList<>();
-        session.cursorIterator(TableGetter.class, cursor, o -> {
-
-            stringList.add(o);
-        });
-        assertEquals(10, stringList.size());
-        stringList.forEach(s -> {
-            assertEquals("simple", s.name);
-            assertEquals("Leo",s.children.name);
-        });
     }
 
 

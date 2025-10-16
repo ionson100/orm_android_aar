@@ -285,8 +285,10 @@ class UtilsCompound {
 
     }
 
-    static void CompoundFree(List<ItemFieldFree> listIf, Cursor cursor, Object o) throws Exception {
-        for (ItemFieldFree str : listIf) {
+
+
+    static void CompoundFree(List<ItemField> listIf, Cursor cursor, Object o) throws Exception {
+        for (ItemField str : listIf) {
             int i = cursor.getColumnIndex(str.columnNameRaw);
             if (i == -1) continue;
             Field res = str.field;
@@ -295,5 +297,12 @@ class UtilsCompound {
 
         }
     }
+     static void builderInstance(CacheMetaData metaData,Cursor cursor, Object instance) throws Exception {
+        if(metaData.isFreeClass){
+            CompoundFree(metaData.listColumn,cursor,instance);
+        }else{
+            Compound(metaData.listColumn,metaData.keyColumn,cursor,instance);
+        }
+     }
 
 }

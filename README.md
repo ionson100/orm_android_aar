@@ -11,7 +11,7 @@
 | [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                          |
 | [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                |
 | [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                    |
-| [@MapForeignKey](#@MapForeignKey)                             | [cursorIterator](#cursorIterator)                  |
+| [@MapForeignKey](#@MapForeignKey)                             |                 |
 | [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                  |
 | [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                    |
 |                                                               | [singleOrDefault](#singleOrDefault)                |
@@ -639,71 +639,6 @@ SELECT "aDouble","stringList1","stringList2" FROM "TestListCustom$TableMain" WHE
 > Внимание:Поля помеченные в главной таблице как ```@MapColumnJson``` не должны участвовать в целевой, конвертация произойдет
 > с ошибкой, если вам очень надо это поле, сделайте его строкой, и сами конвертируйте в объект.
 
-
-
-####  < T > void cursorIterator(@NonNull Class<T> aClass,@NonNull IAction<T> callback, String where, Object... objects)  <a name="cursorIterator"></a>
-Если вы не желаете получать результирующий список, вы можете обработать результат выборки по месту, обход курсора, передав
-функцию обратного вызова. \
-Пример, как получить список.
-```javas
-
-ISession session = Configure.getSession();
-for (int i = 0; i <  10 ; i++) {
-   MyTable t=new MyTable("name",18);
-   session.insert(t);
-}
-
-List<MyTable> list=new ArrayList<>();
-session.cursorIterator(MyTable.class,table -> {
-    list.add(table);
-    },"name not null order by name");
-assertTrue(list.size()==10);
-```
-####  < T > void cursorIterator(@NonNull Class<T> aClass, Cursor cursor, IAction<T> function)
-Эта функция, которая принимает объект курсора преобразует каждый проход курсора в объект переданного типа, и передает
-этот объект  в функцию обратного вызова. \
-Класс типа выходного объекта, может быть произвольным типом, без аннотаций, единственное условие, название полей класса выходного типа,
-должны совпадать с полями строкой запроса.
-```java
-@MapTable
-static class TableUser {
-    @MapPrimaryKey
-    public int id;
-    @MapColumn
-    String name="name";
-    @MapColumn
-    int age=18;
-    @MapColumn
-    String email="ion@qw.com";
-}
-static class TableUserCustom {
-    public int id;
-    String name="name";
-    int age=18;
-    String email="ion@qw.com";
-}
-ISession session = Configure.getSession();
-try {
-    session.dropTableIfExists(TableUser.class);
-    session.createTableIfNotExists(TableUser.class);
-
-} catch (Exception e) {
-    throw new RuntimeException(e);
-}
-
-for (int i = 0; i < 5; i++) {
-    session.insert(new TableUser());
-}
-
-List<TableUserCustom> list = new ArrayList<>();
-String sql="SELECT id,name,age,email FROM "+session.getTableName(TableUser.class);
-Cursor cursor=session.execSQLRaw(sql);
-session.cursorIterator(TableUserCustom.class,cursor,tableUserCustom -> {
-    list.add(tableUserCustom);
-});
-
-assertTrue(list.size()==5);
-```
 
 #### < T, D extends Object > List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects); <a name="getListSelect"></a>
 

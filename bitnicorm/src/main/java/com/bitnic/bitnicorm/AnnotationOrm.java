@@ -40,21 +40,18 @@ class AnnotationOrm {
                 if(res.type==String.class||res.type== UUID.class){
                     res.isAssigned=true;
                 }
-
-
                 res.field = f;
                 break;
             }
         }
         return res;
     }
+    public static List<ItemField> getListItemFieldColumnFreeNew(Class<?> aClass) {
 
-    public static List<ItemFieldFree> getListItemFieldColumnFree(Class<?> aClass) {
-
-
-        List<ItemFieldFree> list = new ArrayList<>();
-        for (Field f : getAllFieldsCustom(aClass)) {
-            ItemFieldFree itemFieldFree=new ItemFieldFree();
+        List<ItemField> list = new ArrayList<>();
+        for (Field f : getAllFields(aClass)) {
+            if(f.getName().contains("$")) continue;
+            ItemField itemFieldFree=new ItemField();
             itemFieldFree.columnName="\""+f.getName()+"\"";
             itemFieldFree.columnNameRaw=Utils.clearStringTrimRaw(f.getName());
             itemFieldFree.field=f;
@@ -138,14 +135,6 @@ class AnnotationOrm {
         }
         return fields;
     }
-
-    private static List<Field> getAllFieldsCustom(Class<?> clazz) {
-        List<Field> fields = new ArrayList<>(Arrays.asList(clazz.getDeclaredFields()));
-        return fields;
-    }
-
-
-
 
 
 }

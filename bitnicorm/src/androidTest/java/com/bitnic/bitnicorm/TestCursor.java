@@ -53,17 +53,41 @@ public class TestCursor extends BaseTestClass {
             session.insert(persistent);
         }
 
-        List<TablePersistent> list=new ArrayList<>();
-         session.cursorIterator(TablePersistent.class,user -> {
-             list.add(user);
-         }," name not null order by name");
+        List<TablePersistent> list= session.getList(TablePersistent.class);
+
          assertTrue(list.size()==10);
          String sql="Select count (*)  from "+session.getTableName(TablePersistent.class);
          int count= (int) session.executeScalar(sql);
          assertTrue(count==10);
          boolean  b=session.any(TablePersistent.class," name is null");
         assertFalse(b);
+    }
+    static class TableTemp{
+        public String name;
 
+        public int age;
+    }
+
+    @Test
+    public void TestListFree() {
+        initConfig();
+        ISession session = Configure.getSession();
+        try {
+            session.dropTableIfExists(TablePersistent.class);
+            session.createTableIfNotExists(TablePersistent.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        for (int i = 0; i <  10 ; i++) {
+            TablePersistent persistent=new TablePersistent("name",18);
+            session.insert(persistent);
+        }
+
+        var sql="select name, age FROM "+session.getTableName(TablePersistent.class);
+
+        List<TableTemp> list= session.getListFree(TableTemp.class,sql);
+
+        assertTrue(list.size()==10);
 
     }
 
