@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,10 @@ class Utils {
                     String hexString = bytesToHex((byte[]) objects[i]);
                     String strCore = "0x" + hexString;
                     str[i] = strCore;
-                } else {
+                } else if(objects[i] instanceof Date){
+                    var s = UtilsHelper.dateToStringForSQLite((Date)objects[i]);
+                    str[i] = s;
+                }else {
                     var s = String.valueOf(objects[i]);
                     str[i] = s;
                 }

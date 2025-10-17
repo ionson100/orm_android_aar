@@ -75,7 +75,10 @@ class CacheMetaData<T> {
             }
             listSelectColumns[listColumn.size()] = keyColumn.columnName;
             listSelectColumns[0] = keyColumn.columnName;
-            listSelectColumns[listSelectColumns.length - 1] = listColumn.get(0).columnName;
+            if(listColumn.size()>0){
+                listSelectColumns[listSelectColumns.length - 1] = listColumn.get(0).columnName;
+            }
+
 
         }else {
             isFreeClass=true;

@@ -15,8 +15,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -171,7 +174,7 @@ public class TestListCustom extends BaseTestClass {
 
 
     }
-    static class TestFilling {
+    static class TestFillingPart {
         public String name;
         public int age;
     }
@@ -192,14 +195,14 @@ public class TestListCustom extends BaseTestClass {
             session.insert(new TableUser());
         }
 
-        List<TestFilling> list=new ArrayList<>();
+        List<TestFillingPart> list=new ArrayList<>();
         var sql="select name, age from "+session.getTableName(TableUser.class)+";";
         Log.i("--------------",sql);
         try (Cursor cursor = session.execSQLRaw(sql)) {
 
             if (cursor.moveToFirst()) {
                 do {
-                    TestFilling u=  session.objectFiller(TestFilling.class, cursor);
+                    TestFillingPart u=  session.objectFiller(TestFillingPart.class, cursor);
                     list.add(u);
                 } while (cursor.moveToNext());
             }
@@ -258,7 +261,93 @@ public class TestListCustom extends BaseTestClass {
 
     }
 
+    @MapTable
+    static class TableAppend{
+        @MapPrimaryKey
+        public long id;
+        @MapColumn
+        public String name;
+        @MapColumn
+        public Date date= new Date();
+        @MapColumn
+        public UUID uuid= UUID.randomUUID();
+        @MapColumn
+        public BigDecimal bigDecimal= new BigDecimal("1111111");
+    }
+
+    @Test
+    public void TestUpdateAppend(){
+        initConfig();
+        ISession session=Configure.getSession();
+        try {
+            session.dropTableIfExists(TableAppend.class);
+            session.createTableIfNotExists(TableAppend.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        session.insert(new TableAppend());
+         var o=session.firstOrDefault(TableAppend.class,null);
+         o.name="11";
+         var res=session.update(o," date = ? and uuid=? and bigDecimal = ?",o.date,o.uuid,o.bigDecimal);
+         assertTrue(res==1);
 
 
+    }
+
+    @MapTableName("main")
+    @MapTableReadOnly
+    static class BaseMain{
+        @MapPrimaryKeyName("_id")
+        int id;
+
+    }
+    @MapTableReadOnly
+    static class SubMain extends BaseMain {
+        @MapColumn
+        public String name;
+        @MapColumn
+        public int age;
+    }
+    static class TableMain1 extends SubMain {
+        @MapColumn
+        public String email;
+    }
+
+    @Test
+    public void TestSubClass(){
+        initConfig();
+        ISession session=Configure.getSession();
+        try {
+            session.dropTableIfExists(TableMain1.class);
+            session.createTableIfNotExists(TableMain1.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        for (int i = 0; i < 5; i++) {
+            TableMain1 main=new TableMain1();
+            main.age=10;
+            main.name="Leo"+i;
+            main.email="leo123@.leo.com";
+            session.insert(main);
+        }
+        var list1= session.getList(TableMain1.class,"1 order by _id");
+        var list2= session.getList(SubMain.class,"1 order by _id");
+        var list3= session.getList(BaseMain.class,"1 order by _id");
+        assertTrue((list1.size()+list2.size()+list3.size())==5*3);
+        for (int i = 0; i <5; i++) {
+            assertEquals(list1.get(i).id,list2.get(i).id);
+            assertEquals(list2.get(i).id,list3.get(i).id);
+            assertEquals(list1.get(i).age,list2.get(i).age);
+            assertEquals(list1.get(i).name,list2.get(i).name);
+        }
+        /*When attempting to modify, an error occurs because the class is closed with the annotation:  @MapTableReadOnly */
+         //session.insert(list2.get(1)); //error table read only
+         //session.update(list2.get(1)); //error table read only
+         //session.delete(list2.get(1)); //error table read only
+         //session.deleteRows(SubMain.class);//error table read only
+         //session.updateRows(SubMain.class,new PairColumnValue().put("name","newName"),null);//error table read only
+    }
 
 }

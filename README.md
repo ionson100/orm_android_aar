@@ -11,15 +11,15 @@
 | [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                               |
 | [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                     |
 | [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                         |
-| [@MapForeignKey](#@MapForeignKey)                             |                                                         |
+| [@MapForeignKey](#@MapForeignKey)                             | [getListFree](#getListFree)                             |
 | [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                       |
 | [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                         |
 |                                                               | [singleOrDefault](#singleOrDefault)                     |
 | [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                               |
 | [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                     |
 | [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                         |
-|                                                               | [executeSQL](#executeSQL)                               |
-|                                                               | [any](#any)                                             |
+| [Получение не полной записи из таблицы](#312)                 | [executeSQL](#executeSQL)                               |
+| [Как подключить в проект](#312312)                            | [any](#any)                                             |
 |                                                               | [tableExists](#tableExists)                             |
 |                                                               | [getTableName](#getTableName)                           |
 |                                                               | [createTable](#createTable)                             |
@@ -33,8 +33,7 @@
 |                                                               | [getContentValuesForUpdate](#getContentValuesForUpdate) |
 |                                                               | [save](#save)                                           |
 |                                                               | [objectFiller](#objectFiller)                           |
-|                                                               | [](#)                                                   |
-|                                                               | [](#)                                                   |
+
 
 
 Написана java 11.\
@@ -442,6 +441,7 @@ Configure(String dataBaseName, int version, Context context, List<Class> classLi
 ```
 #### < T > int update(@NonNull T item)<a name="update"></a>
 Метод обновляет запись в базе данных, обновление происходит по значению первичного ключа. \
+Обновление происходит по все полям. \
 В случае успеха вернется 1, 0 запись не обновлена. \
 Из-за чего может вернуться 0, скорее всего не будет найдена запись с первичным ключом. \
 Используйте по возможности UUID.
@@ -452,6 +452,34 @@ Configure(String dataBaseName, int version, Context context, List<Class> classLi
  session.insert(table);
  table = session.firstOrDefault(MyTable.class,"id = ?",table.id);
  var res = session.update(table);
+```
+#### < T > int update(@NonNull T item,String appendWhere, Object... parameters);
+Метод обновляет запись в базе данных, обновление происходит по значению первичного ключа, и добавочным ограничением, с возможностью использовать параметры. \
+Оптимистическое обновление. \
+Обновление происходит по все полям. \
+В случае успеха вернется 1, 0 запись не обновлена. \
+Из-за чего может вернуться 0, скорее всего не будет найдена запись с первичным ключом и дополнительными условиями. \
+```java
+@MapTable
+class TableAppend{ 
+    @MapPrimaryKey
+    public long id;
+    @MapColumn
+    public String name;
+    @MapColumn
+    public Date date= new Date();
+    @MapColumn
+    public UUID uuid= UUID.randomUUID();
+    @MapColumn
+    public BigDecimal bigDecimal= new BigDecimal("1111111");
+}
+ISession session=Configure.getSession();
+session.insert(new TableAppend());
+var o=session.firstOrDefault(TableAppend.class,null);
+o.name="11";
+var res=session.update(o," date = ? and uuid=? and bigDecimal = ?",o.date,o.uuid,o.bigDecimal);
+assertTrue(res==1);
+
 ```
 #### < T > int delete(@NonNull T item);<a name="delete"></a>
 Метод удаляет запись в базе данных, удаление происходит по значению первичного ключа. \
@@ -473,14 +501,14 @@ Configure(String dataBaseName, int version, Context context, List<Class> classLi
  session.insert(table);
  var res = session.deleteRows(MyTable.class);
 ```
-####  < T >int deleteRows(@NonNull Class<T> aClass, String where, Object... objects)
+####  < T >int deleteRows(@NonNull Class<T> aClass, String where, Object... parameters)
 Удаляет записи из таблицы по условию (где возраст меньше 10), возвращает количество удаленных записей
 
 ```java
  ISession session = Configure.getSession;
  var res = session.deleteRows(MyTable.class,"age < 10");
 ```
-#### < T > int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... objects) <a name="updateRows"></a>
+#### < T > int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... parameters) <a name="updateRows"></a>
 Обновляет записи в таблице, где возраст меньше 10, делает у них новое поле name, и меняет возраст на 22, звучит конечно абсурдно,
 но для примера сгодится, возвращает количество обновлённых записей.
 ```java
@@ -531,7 +559,7 @@ ISession session = Configure.getSession;
 List<MyTable> list= session.getList(MyTable.class);
 int count = list.size();
 ```
-####  < T > List<T> getList(@NonNull Class<T> aClass, String where, Object... objects);
+####  < T > List<T> getList(@NonNull Class<T> aClass, String where, Object... parameters);
 
 Позволяет получить типизированный список объектов по условию выборки, ассоциированный с записями таблицы.
 При отсутствии результат: пустой список.\
@@ -574,73 +602,45 @@ int count = list.size();
 > Внимание: Если вы не хотите пользоваться параметром where, поставьте null, \
 > если все же нужно, но не надо учитывать where, поставьте 1 и пишите условие дальше.
 
-####  < T,D > List< D > getList(@NonNull Class<T> aClassFrom,@NonNull Class<D> aClassTo, String where, Object... objects)
-Иногда нужно получить типизированный список не всего объекта, где например 100 полей, а только часть его, конечно
-можно выкрутиться с наследованием, а можно и такой перегрузкой, где тип класса aClassTo, это простой тип без аннотаций,
-основное требование, поля этого типа должны соответствовать названиям колонок в таблице описанной типом: aClassFrom. \
-Пример:
-```javas
- @MapTable
-static class TableMain {
+#### < T > List<T> getListFree(@NonNull Class<T> aClass,String sql, Object... parameters) <a name="getListFree"></a>
+Позволяет получить типизированный список объектов из таблицы на основе пользовательского запроса.
+Класс типа может содержать аннотации маппинга, может и не содержать.
+Например, вы можете получить только часть полей из таблицы, или получить результат джойна, сформировав сами целевой класс типа. \
+Единственное ограничение, трансляция не работает с таблицами, у которых есть поля помеченные аннотацией: ```@MapGolumnJson```, хотя и это можно
+обойти, поставив в целевом типе эти поля как строку. \
+Требование: Поля название полей в целевом классе типа, должно совпадать с названием колонок в запросе на извлечение, а так жк ожидаемый тип этих полей. \
+Пример, как можно вытащить из таблицы только часть полей:
+```java
+@MapTable
+class TableUser{
     @MapPrimaryKey
-    public int anInt;
-    @MapColumnIndex
+    public int id;
     @MapColumn
-    public double aDouble;
+    public String name;
     @MapColumn
-    public List<String> stringList1=new ArrayList<>();
-    @MapColumn
-    //@MapColumnJson
-    public List<String> stringList2=new ArrayList<>();
+    public int age;
 }
-static class TableCustom{
-    public double aDouble;
-    public List<String> stringList1;
-    public List<String> stringList2;
-}
-@Test
-public void TestList() {
-    initConfig();
-    ISession session = Configure.getSession();
-    try {
-        session.dropTableIfExists(TableMain.class);
-        session.createTableIfNotExists(TableMain.class);
 
-    } catch (Exception e) {
-        throw new RuntimeException(e);
-    }
-    for (int i = 0; i < 5; i++) {
-        TableMain t=new TableMain();
-        t.aDouble=0.67D;
-        t.stringList1.add("simple");
-        t.stringList2.add("simple");
-        session.insert(t);
-    }
-    List<TableCustom> list=session.getList(TableMain.class,TableCustom.class," aDouble > 0" );
-    assertTrue(list.size()==5);
-    list.forEach(tableCustom -> {
-        assertTrue(tableCustom.aDouble==0.670D);
-        assertTrue(tableCustom.stringList1.get(0).equals("simple"));
-        assertTrue(tableCustom.stringList2.get(0).equals("simple"));
-    });
+class TableUserPartial{
+    public String name;
+    public int age;
 }
+ISession session = Configure.getSession();
+       
+for (int i = 0; i <  10 ; i++) {
+    TableUser user=new TableUser();
+    session.insert(user);
+}
+
+String sql="select name, age FROM "+session.getTableName(TableUser.class);
+
+List<TableUserPartial> list= session.getListFree(TableUserPartial.class,sql);
+
 ```
-```sql
-CREATE TABLE IF NOT EXISTS "TestListCustom$TableMain" (
-"anInt"  INTEGER  PRIMARY KEY, 
-"aDouble" REAL DEFAULT 0, 
-"stringList1" BLOB, 
-"stringList2" BLOB); 
-CREATE INDEX IF NOT EXISTS TestListCustom$TableMain_aDouble ON "TestListCustom$TableMain" ("aDouble");
-
-SELECT "aDouble","stringList1","stringList2" FROM "TestListCustom$TableMain" WHERE  aDouble > 0;
-```
-> [!NOTE]\
-> Внимание:Поля помеченные в главной таблице как ```@MapColumnJson``` не должны участвовать в целевой, конвертация произойдет
-> с ошибкой, если вам очень надо это поле, сделайте его строкой, и сами конвертируйте в объект.
 
 
-#### < T, D extends Object > List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... objects); <a name="getListSelect"></a>
+
+#### < T, D extends Object > List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... parameters); <a name="getListSelect"></a>
 
 Позволяет получить список одиночных значений по определенному полю. \
 Пример: Дай мне список электронных адресов, где адрес не равен null, я отправлю им всем сообщения.
@@ -650,7 +650,7 @@ ISession session = Configure.getSession;
 List<String> list= session.getLisSelect(MyTable.class,"email","email not null");
 int count = list.size();
 ```
-####  < T > T firstOrDefault(@NonNull Class<T> aClass, String where, Object... objects) <a name="firstOrDefault"></a>
+####  < T > T firstOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) <a name="firstOrDefault"></a>
 Иногда нужно получить один объект по условию, п при его отсутствии получить null.
 Этим тут и займемся. \
 Пример: Дай мне только первую запись, где возраст больше 149 при сортировке по имени.
@@ -661,7 +661,7 @@ MyTable poz = session.firstOrDefault(MyTable.class,"age > ? order by name",149);
 ```
 Тут понятно, может быть только один поц.
 
-####   < T > T first(@NonNull Class<T> aClass, String where, Object... objects) throws Exception <a name="first"></a>
+####   < T > T first(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception <a name="first"></a>
 Пытается получить первую запись, по условию, если такой записи не существует, выкидывается исключение.
 Пример: Дай мне только первую запись, где возраст больше 149 при сортировке по имени.
 
@@ -671,7 +671,7 @@ MyTable poz = session.firstOrDefault(MyTable.class,"age > ? and email not null o
 ```
 Тут все понятно, будет исключение, столько живут только черепахи, но у них нет электронного адреса.
 
-####  < T > T singleOrDefault(@NonNull Class<T> aClass, String where, Object... objects) <a name="singleOrDefault"></a>
+####  < T > T singleOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) <a name="singleOrDefault"></a>
 Иногда возникает желание получить уникальны объект по условию, то есть, он существует в таблице в количестве одного или вообще не существует. \
 Вернет уникальный объект или null;
 Мы спешим к вам:
@@ -679,11 +679,11 @@ MyTable poz = session.firstOrDefault(MyTable.class,"age > ? and email not null o
 ISession session = Configure.getSession;
 MyTable poz = session.singleOrDefault(MyTable.class,"age > ? and email not null order by name",200);
 ```
-####  < T > T single(@NonNull Class<T> aClass, String where, Object... objects) throws Exception <a name="single"></a>
+####  < T > T single(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception <a name="single"></a>
 Возвращает уникальны объект по условию. Вернет уникальный объект или выкинет исключение;
 
 
-####  < T > List < Object > distinctBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... objects) <a name="distinctBy"></a>
+####  < T > List < Object > distinctBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) <a name="distinctBy"></a>
 Возвращает distinct значения по одному полю таблицы базы данных. \
 Пример: Дай мне distinct возраста, что встречаются в таблице, где возраст больше 18 и отсортируй результат по возрастанию
 
@@ -691,7 +691,7 @@ MyTable poz = session.singleOrDefault(MyTable.class,"age > ? and email not null 
 ISession session = Configure.getSession;
 List<Integer> list = session.distinctBy(MyTable.class,"age","age > ?  order by age",18);
 ```
-#### < T > Map < Object, List< T > > groupBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... objects) <a name="groupBy"></a>
+#### < T > Map < Object, List< T > > groupBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) <a name="groupBy"></a>
 
 Получает группированный результат по одному полю таблицы, по условию. \
 Возвращает словарь, где ключ: уникальное значение поля, а value: список строк, которые содержат в себе это уникальное значение.
@@ -700,7 +700,7 @@ List<Integer> list = session.distinctBy(MyTable.class,"age","age > ?  order by a
 ISession session = Configure.getSession;
 Map<Integer>,List<MyTable>>   result = session.groupBy(MyTable.class,"age",null);
 ```
-#### Object executeScalar(@NonNull String sql, Object... objects) <a name="executeScalar"></a>
+#### Object executeScalar(@NonNull String sql, Object... parameters) <a name="executeScalar"></a>
 #### Object executeScalar(@NonNull String sql);
 Это типовые функции, которые есть в любой ОРМ, возвращают одиночное значение запакованное в Object. \
 Кто в теме, это первая строка курсора с индексом колонки 0.
@@ -711,7 +711,7 @@ int count= (int) session.executeScalar(sql);
 ```
 ISession session = Configure.getSession;
 
-#### void executeSQL(@NonNull String sql, Object... objects) <a name="executeSQL"></a>
+#### void executeSQL(@NonNull String sql, Object... parameters) <a name="executeSQL"></a>
 
 Это типовая функция, которая есть в любой ОРМ, просто выполняет запрос и не возвращает результат, можно применять параметры. \
 как правило применяется при старте приложения, после инициализации конфигурации, или после создания таблицы.
@@ -721,7 +721,7 @@ session.executeSQL("CREATE INDEX IF NOT EXISTS test_name ON 'MyTable' ('name');"
 
 ```
 
-#### < T > boolean any(@NonNull Class<T> aClass, String where, Object... objects) <a name="any"></a>
+#### < T > boolean any(@NonNull Class<T> aClass, String where, Object... parameters) <a name="any"></a>
 #### < T > boolean any(@NonNull Class<T> aClass)
 
 Это типовые функции, которые есть в любой ОРМ, позволяют проверить существуют ли записи в таблице, без условия и с условием.
@@ -891,9 +891,10 @@ ContentValues  contentValues =session.getContentValuesForUpdate(TableUser.class,
                 .put("email","ion100@df.com"));
 ```
 
-####  <T> int save(@NonNull T item) <a name="save"></a>
+####  < T > int save(@NonNull T item) <a name="save"></a>
 Этот метод может применяться для вставки или обновления объекта ассоциированного со строкой таблицы, класс типа этого объекта
-должен реализовывать класс ```Prsistent```, орм сама решает, вставлять объект или обновлять.
+должен реализовывать класс ```Prsistent```, орм сама решает, вставлять объект или обновлять. \
+Поле: ```boolean isPersistent;``` орм заполняет сама(вставка, обновление, извлечение)
 
 ```java
 
@@ -921,7 +922,173 @@ tableUser,age=30;
 
 session.save(tableUser);//update
 ```
-#### Маркировка объектов через наследование class Persistent <a name="Persistent"></a>
+#### < T > T objectFiller(Class<T> aClass, Cursor cursor) throws Exception <a name="objectFiller"></a>
+Вспомогательный метод, применяется при обходе курсора, возвращает заполненный из курсора объект. \
+Класс типа объекта может быть произвольным типом, или типом ассоциированным с таблицей, условие: название полей типа, или колонок таблицы (аннотации) \
+должны совпадать с названием колонок в строке Sql запроса на выборку. \
+Тип должен иметь открытый конструктор без параметров. Возможна ошибка при создании типа и при приведении полей. \
+
+Пример:
+```java 
+@MapTable
+class TableUser { 
+    @MapPrimaryKey
+    public int id;
+    @MapColumn
+    String name="name";
+    @MapColumn
+    int age=18;
+    @MapColumn
+    String email="ion@qw.com";
+}
+class TestFillingPart {
+    public String name;
+    public int age;
+}
+
+ISession session = Configure.getSession();
+for (int i = 0; i < 5; i++) {
+    session.insert(new TableUser());
+}
+List<TestFillingPart> list=new ArrayList<>();
+var sql="select name, age from "+session.getTableName(TableUser.class)+";";
+      
+try (Cursor cursor = session.execSQLRaw(sql)) {
+    
+    if (cursor.moveToFirst()) {
+        do {
+                   TestFillingPart userPart=  session.objectFiller(TestFillingPart.class, cursor);
+                    list.add(userPart);
+        } while (cursor.moveToNext());
+    }
+}catch (Exception e){
+    throw new RuntimeException(e);
+}
+```
+
+#### < T > void objectFiller(Cursor cursor, T instance) throws Exception
+Вспомогательный метод, применяется при обходе курсора, заполняет из курсора ранее созданный объект. \
+Класс типа объекта может быть произвольным типом или типом, ассоциированным с таблицей, единственное условие: название полей типа, или колонок таблицы (аннотации)
+должны совпадать с названием колонок в строке Sql запроса на выборку. 
+Возможна ошибка при приведении типа полей с полученным типом из курсора.\
+
+Пример:
+```java 
+@MapTable
+class TableUser { 
+    @MapPrimaryKey
+    public int id;
+    @MapColumn
+    String name="name";
+    @MapColumn
+    int age=18;
+    @MapColumn
+    String email="ion@qw.com";
+}
+class TestFillingPart {
+    public String name;
+    public int age;
+}
+
+ISession session = Configure.getSession();
+for (int i = 0; i < 5; i++) {
+    session.insert(new TableUser());
+}
+List<TestFillingPart> list=new ArrayList<>();
+var sql="select name, age from "+session.getTableName(TableUser.class)+";";
+      
+try (Cursor cursor = session.execSQLRaw(sql)) {
+    
+    if (cursor.moveToFirst()) {
+        do {
+                   TestFillingPart testFillingPart=new TestFillingPart();
+                    session.objectFiller(cursor,testFillingPart);
+                    list.add(userPart);
+        } while (cursor.moveToNext());
+    }
+}catch (Exception e){
+    throw new RuntimeException(e);
+}
+```
+### interface IEventOrm <a name="IEventOrm"></a>
+Классы типов, которые реализуют этот интерфейс, могут получать вызовы при манипуляции данными таблицы на клиенте. \
+Через этот вызов, можно осуществлять контроль за действием и состоянием объекта в контексте модификации таблицы.
+```java
+class TableActionOrm implements IEventOrm {
+    @MapPrimaryKey
+    public UUID id=UUID.randomUUID();
+    @MapColumn
+    public String name;
+    public int action;
+    
+    @Override
+    public void beforeUpdate() {
+    }
+
+    @Override
+    public void afterUpdate() {
+    }
+
+    @Override
+    public void beforeInsert() {
+    }
+
+    @Override
+    public void afterInsert() {
+    }
+
+    @Override
+    public void beforeDelete() {
+    }
+
+    @Override
+    public void afterDelete() {
+    }
+}
+```
+
+### interface IUserType <a name="IUserType"></a>
+
+Если поля класса являются типом, который реализует этот интерфейс, то это поле размещается  в таблице  как  строковое поле. \
+Контроль за формирования строки и заполнения тела объекта из строки, реализует пользователь.
+
+```java
+public class UserClass implements IUserType
+{
+    public String name;
+    public int age;
+    @Override
+    public void initBody(String str) {
+        Gson gson=new Gson();
+        UserClass inner= gson.fromJson(str, UserClass.class);
+        name=inner.name;
+        age=inner.age;
+    }
+    @Override
+    public String getString() {
+        Gson gson=new Gson();
+       return gson.toJson(this);
+    }
+}
+
+
+
+@MapTableName("user_23")
+public class TableUser {
+    @MapPrimaryKeyName("_id")
+    public int id;
+
+    @MapColumnName("user")
+    public UserClass userClass;
+
+    @MapColumn
+    @MapColumnType("TEXT NOT NULL UNIQUE")
+    public String address;
+}
+```
+
+### interface IUserType
+### Маркировка объектов через наследование class Persistent <a name="Persistent"></a>
 Одна из проблем при создании орм, сохранять сведения об объекте, в нашем случае это сведения
 откуда получен объект, из базы или нет, в разных орм - разный подход, например создание прокси объекта на основе данного типа (java, C#), маркировка объекта специальным атрибутом(C#)и т.д.
 В нашем случае, это наследования объекта, описывающего табличную сущность, от class Persistent.
@@ -929,6 +1096,81 @@ session.save(tableUser);//update
 на основе этого можно принимать решение, что делать с объектом при помещении его в метод ```save```, вставлять или обновлять, в то же время, это поле решает: 
 выкинуть ли исключение при вставке в базу объекта полученного ранее из базы, удаление или обновление локально созданного объекта.\
 Применение этого наследования не догма, вы можете отказаться, и сами следить откуда получен объект, в этом случае - вы не сможете применять метод ```save```.
+
+#### Получение типизированных списков по не полной записи из таблицы <a name="312"></a>
+Наверное самый простой способ решить эту проблему, через использование суб классов. \
+Давайте разложим целевой класс на суб классы:
+```java
+
+@MapTableName("main")
+@MapTableReadOnly
+class BaseMain{
+    @MapPrimaryKeyName("_id")
+    int id;
+
+}
+@MapTableReadOnly
+class SubMain extends BaseMain {
+    @MapColumn
+    public String name;
+    @MapColumn
+    public int age;
+}
+class TableMain extends SubMain {
+    @MapColumn
+    public String email;
+}
+
+ISession session=Configure.getSession();
+try {
+    session.dropTableIfExists(TableMain.class);
+    session.createTableIfNotExists(TableMain.class);
+} catch (Exception e) {
+    throw new RuntimeException(e);
+}
+for (int i = 0; i < 5; i++) {
+    TableMain main=new TableMain();
+    main.age=10;
+    main.name="Leo"+i;
+    main.email="leo123@.leo.com";
+    session.insert(main);
+}
+var list1= session.getList(TableMain.class,"1 order by _id");
+var list2= session.getList(SubMain.class,"1 order by _id");
+var list3= session.getList(BaseMain.class,"1 order by _id");
+assertTrue((list1.size()+list2.size()+list3.size())==5*3);
+for (int i = 0; i <5; i++) {
+    assertEquals(list1.get(i).id,list2.get(i).id);
+    assertEquals(list2.get(i).id,list3.get(i).id);
+    assertEquals(list1.get(i).age,list2.get(i).age);
+    assertEquals(list1.get(i).name,list2.get(i).name);
+}
+/*When attempting to modify, an error occurs because the class is closed with the annotation:  @MapTableReadOnly */
+//session.insert(list2.get(1)); //error table read only
+//session.update(list2.get(1)); //error table read only
+//session.delete(list2.get(1)); //error table read only
+//session.deleteRows(SubMain.class);//error table read only
+//session.updateRows(SubMain.class,new PairColumnValue().put("name","newName"),null);//error table read only
+```
+> [!NOTE]\
+> Обратите внимание, все суб классы я пометил аннотацией: ```@MapTableReadOnly```. 
+> Это предохраняет мою таблицу,если я буду модифицировать таблицу через объекты этих суб классов или указывая тип суб классов. \
+> При попытке модификации таблицы - я получу ошибку. 
+
+Еше один способ, получение типизированного списка через метод [getListFree](#getListFree), нужно подготовить запрос на выборку,
+это может быть JOIN или UNION SELECT, основное требование, что бы целевой тип имел поля, с названием,  совпадающими с полями запроса,
+или поля помеченные аннотацией "@MapColumnName". \
+Ну и как последний вариант, получить Cursor, и обходить его самому.
+При обходе курсора можно использовать методом заполнения: [objectFiller](#objectFiller)
+Стоит остановиться на применений в функции параметра запроса (where) и параметра - Object... parameters.
+В параметре where писать слово  ```Where``` не нужно, в случае - если where не нужен, можно поставить:1 или 1=1. \
+Пример: "id= 2", "id=2 and name not null order by name LIMIT 10", "1 LIMIT 10", "1 order by name" и т.д. \
+параметр parameters, транслируется в массив строк, очередность записи,
+должна соответствовать очередность применения параметра (?) в строке условия запроса.
+
+### Как подключить в проект. <a name="312312"></a>
+
+
 
 
 

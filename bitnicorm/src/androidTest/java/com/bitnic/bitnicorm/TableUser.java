@@ -6,7 +6,6 @@ public class TableUser {
     public int id;
 
     @MapColumnName("user")
-    //@MapUserType
     public UserClass userClass;
 
     @MapColumnName("address")

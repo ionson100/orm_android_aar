@@ -69,7 +69,6 @@ class AnnotationOrm {
         for (Field f : getAllFields(aClass)) {
             if (f.isAnnotationPresent(MapColumnName.class)||f.isAnnotationPresent(MapColumn.class)) {
                 boolean userField = IUserType.class.isAssignableFrom(f.getType());
-//                boolean serializableJson =ISerializableJson.class.isAssignableFrom(f.getType());
                 final MapColumnName column = f.getAnnotation(MapColumnName.class);
                 final MapColumn columnReal = f.getAnnotation(MapColumn.class);
                 final MapColumnIndex mapIndex=f.getAnnotation(MapColumnIndex.class);

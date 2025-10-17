@@ -21,6 +21,8 @@ import android.database.sqlite.SQLiteDatabase;
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
+import java.io.StreamCorruptedException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Root type for working with ORM
@@ -267,7 +270,10 @@ public class Configure implements ISession {
             String where = whereBuilder(metaData.keyColumn.columnName + " = ?", metaData);
             String[] param = new String[]{String.valueOf(key)};
             res=sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
-            Logger.I(Utils.getStringUpdate(metaData.tableName,contentValues,where));
+            if(Configure.IsWriteLog){
+                Logger.I(Utils.getStringUpdate(metaData.tableName,contentValues,where+" params: "+ String.join(" - ", param)));
+            }
+
             if(metaData.isPersistent){
                 ((Persistent)item).isPersistent=true;
             }
@@ -279,6 +285,19 @@ public class Configure implements ISession {
         }
         return res;
 
+    }
+    String[] concat(String[] t1, String[] t2){
+        String[] res=new String[t1.length+t2.length];
+        var index=0;
+        for (int i = 0; i < t1.length; i++) {
+            res[index]=t1[i];
+            index++;
+        }
+        for (int i = 0; i < t2.length; i++) {
+            res[index]=t2[i];
+            index++;
+        }
+        return res;
     }
 
     @Override
@@ -306,10 +325,16 @@ public class Configure implements ISession {
             }
             String[] param = new String[]{String.valueOf(key)};
             if(parameters.length>0){
-               param= parametrize(key, parameters);
+                String[] append =parametrize(parameters);
+                param= concat(param,append);
+
+
             }
             res=sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
-            Logger.I(Utils.getStringUpdate(metaData.tableName,contentValues,where));
+            if(Configure.IsWriteLog){
+                Logger.I(Utils.getStringUpdate(metaData.tableName,contentValues,where +" params: "+ String.join(" - ", param)));
+            }
+
             if(metaData.isPersistent){
                 ((Persistent)item).isPersistent=true;
             }
