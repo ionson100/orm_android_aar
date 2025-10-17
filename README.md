@@ -1172,11 +1172,13 @@ for (int i = 0; i <5; i++) {
 ### Как подключить к проекту. <a name="312312"></a>
 В корне проекта есть директория: ```aar``` в ней  два файла: ```bitnicorm-release.aar``` и ```sources.jar``` - (таблицы описания справки)
 Что бы подключить к проекту: создайте директорию ```libs```
+```markdown
 app/
 ├─ libs/
 │   ├─ bitnicorm-release.aar
 │   └─ sources.jar
 └─ build.gradle.kts
+```
 в файле: ```settings.gradle.kts``` укажите откуда брать подсказки.
 ```markdown
 dependencyResolutionManagement {
