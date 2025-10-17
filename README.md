@@ -1,4 +1,5 @@
 ### Еще одна ORM для андроида
+Лицензия: https://www.apache.org/licenses/LICENSE-2.0.txt
 [Быстрый старт](#start)
 
 | Маппинг                                                       | ISession                                                |
@@ -19,7 +20,7 @@
 | [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                     |
 | [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                         |
 | [Получение не полной записи из таблицы](#312)                 | [executeSQL](#executeSQL)                               |
-| [Как подключить в проект](#312312)                            | [any](#any)                                             |
+| [Как подключить к проекту](#312312)                           | [any](#any)                                             |
 |                                                               | [tableExists](#tableExists)                             |
 |                                                               | [getTableName](#getTableName)                           |
 |                                                               | [createTable](#createTable)                             |
@@ -1154,7 +1155,7 @@ for (int i = 0; i <5; i++) {
 ```
 > [!NOTE]\
 > Обратите внимание, все суб классы я пометил аннотацией: ```@MapTableReadOnly```. 
-> Это предохраняет мою таблицу,если я буду модифицировать таблицу через объекты этих суб классов или указывая тип суб классов. \
+> Это предохраняет мою таблицу, если я буду модифицировать таблицу через объекты этих суб классов или указывая тип суб классов. \
 > При попытке модификации таблицы - я получу ошибку. 
 
 Еше один способ, получение типизированного списка через метод [getListFree](#getListFree), нужно подготовить запрос на выборку,
@@ -1168,7 +1169,41 @@ for (int i = 0; i <5; i++) {
 параметр parameters, транслируется в массив строк, очередность записи,
 должна соответствовать очередность применения параметра (?) в строке условия запроса.
 
-### Как подключить в проект. <a name="312312"></a>
+### Как подключить к проекту. <a name="312312"></a>
+В корне проекта есть директория: ```aar``` в ней  два файла: ```bitnicorm-release.aar``` и ```sources.jar``` - (таблицы описания справки)
+Что бы подключить к проекту: создайте директорию ```libs```
+app/
+├─ libs/
+│   ├─ bitnicorm-release.aar
+│   └─ sources.jar
+└─ build.gradle.kts
+в файле: ```settings.gradle.kts``` укажите откуда брать подсказки.
+```markdown
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        flatDir {
+            dirs("app/libs")
+        }
+    }
+}
+```
+в файле ```build.gradle.kts```
+```markdown
+dependencies {
+
+   ......................
+   .......................
+
+    implementation(files("libs/bitnicorm-release.aar"))
+    implementation(files("libs/sources.jar"))
+    //implementation("com.google.code.gson:gson:2.13.2") по желанию для использования аннотации @MapColumnJson
+}
+```
+Так же в корне проекта есть архив rar ```javadoc.rar``` это папка с javadoc
+
 
 
 
