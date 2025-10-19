@@ -1,11 +1,6 @@
 package com.bitnic.bitnicorm;
-/********************************************************************
- * Copyright © 2016-2017 OOO Bitnic                                 *
- * Created by OOO Bitnic on 08.02.16   corp@bitnic.ru               *
- * ******************************************************************/
 
 import android.util.Log;
-
 import java.util.List;
 import java.util.Objects;
 

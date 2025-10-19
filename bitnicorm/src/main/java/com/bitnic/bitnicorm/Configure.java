@@ -1,8 +1,5 @@
 package com.bitnic.bitnicorm;
-/********************************************************************
- * Copyright © 2016-2017 OOO Bitnic                                 *
- * Created by OOO Bitnic on 08.02.16   corp@bitnic.ru               *
- * ******************************************************************/
+
 
 import static com.bitnic.bitnicorm.Utils.getStringListSqlCreateTable;
 import static com.bitnic.bitnicorm.Utils.parametrize;
@@ -10,6 +7,7 @@ import static com.bitnic.bitnicorm.Utils.partition;
 import static com.bitnic.bitnicorm.Utils.whereBuilder;
 import static com.bitnic.bitnicorm.Utils.whereBuilderRaw;
 import static com.bitnic.bitnicorm.UtilsCompound.builderInstance;
+import static com.bitnic.bitnicorm.UtilsCompound.extractedSwitchSelect;
 import static com.bitnic.bitnicorm.UtilsContentValues.checkFieldValue;
 
 import android.annotation.SuppressLint;
@@ -27,6 +25,7 @@ import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -627,6 +626,22 @@ public class Configure implements ISession {
         where = whereBuilder(where, metaData);
         String[] sdd = new String[]{Utils.clearStringTrimRaw(columnName)};
         String[] str = parametrize(parameters);
+
+        ItemField itemField = null;
+        if (metaData.keyColumn.columnNameRaw.equals(columnName)) {
+            itemField = metaData.keyColumn;
+        } else {
+            for (ItemField itemField1 : metaData.listColumn) {
+                if (itemField1.columnNameRaw.equals(columnName)) {
+                    itemField = itemField1;
+                    break;
+                }
+            }
+        }
+        if (itemField == null) {
+            throw new RuntimeException("Column name: " + columnName + " is not found in the table: " + metaData.tableName);
+        }
+
         try (Cursor cursor = sqLiteDatabaseForReadable.query(metaData.tableName, sdd, where, str, null, null, null, null)) {
             list = new ArrayList<>(cursor.getCount());
             Logger.printSql(cursor);
@@ -634,6 +649,54 @@ public class Configure implements ISession {
             if (cursor.moveToFirst()) {
                 do {
 
+                    Object o = extractedSwitchSelect(cursor, itemField, itemField.field, 1);
+                    D d = (D) o;
+                    list.add(d);
+
+//                    int columnType = cursor.getType(0);
+//                    switch (columnType) {
+//                        case Cursor.FIELD_TYPE_NULL: {
+//                            list.add(null);
+//                            continue;
+//                        }
+//                        case Cursor.FIELD_TYPE_STRING: {
+//                            list.add((D) cursor.getString(0));
+//                            continue;
+//                        }
+//                        case Cursor.FIELD_TYPE_INTEGER: {
+//                            list.add((D) (Object) cursor.getInt(0));
+//                            continue;
+//                        }
+//                        case Cursor.FIELD_TYPE_FLOAT: {
+//                            list.add((D) (Object) cursor.getFloat(0));
+//                            continue;
+//                        }
+//                        case Cursor.FIELD_TYPE_BLOB: {
+//                            list.add((D) cursor.getBlob(0));
+//                            continue;
+//                        }
+//                        default: {
+//                            throw new RuntimeException("не могу определить тип поля:" + columnType);
+//                        }
+//                    }
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
+        return list;
+    }
+
+    @Override
+    public <T> List<T> getListSelect(@NonNull String sql, Object... parameters) {
+        List<T>  list;
+        Logger.I(sql);
+        try (Cursor cursor = execSQLRaw(sql, parameters)) {
+            list=new ArrayList<>(cursor.getCount());
+            if (cursor.moveToFirst()) {
+                do {
                     int columnType = cursor.getType(0);
                     switch (columnType) {
                         case Cursor.FIELD_TYPE_NULL: {
@@ -641,19 +704,19 @@ public class Configure implements ISession {
                             continue;
                         }
                         case Cursor.FIELD_TYPE_STRING: {
-                            list.add((D) cursor.getString(0));
+                            list.add((T) cursor.getString(0));
                             continue;
                         }
                         case Cursor.FIELD_TYPE_INTEGER: {
-                            list.add((D) (Object) cursor.getInt(0));
+                            list.add((T) (Object) cursor.getInt(0));
                             continue;
                         }
                         case Cursor.FIELD_TYPE_FLOAT: {
-                            list.add((D) (Object) cursor.getFloat(0));
+                            list.add((T) (Object) cursor.getFloat(0));
                             continue;
                         }
                         case Cursor.FIELD_TYPE_BLOB: {
-                            list.add((D) cursor.getBlob(0));
+                            list.add((T) cursor.getBlob(0));
                             continue;
                         }
                         default: {
@@ -663,11 +726,8 @@ public class Configure implements ISession {
                 } while (cursor.moveToNext());
             }
         }
-
-
         return list;
     }
-
 
 
     @Override

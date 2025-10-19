@@ -1,8 +1,5 @@
 package com.bitnic.bitnicorm;
-/********************************************************************
- * Copyright © 2016-2017 OOO Bitnic                                 *
- * Created by OOO Bitnic on 08.02.16   corp@bitnic.ru               *
- * ******************************************************************/
+
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -922,6 +919,37 @@ public interface ISession extends Closeable {
      * </pre>
      */
     <T, D> List<D> getListSelect(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters);
+
+    /**
+     * Getting a list of values for one table column
+     *
+     * @param sql sql request
+     * @param parameters   columnName The name of the field in the table by which the selection is made
+     * @param <T> list of type
+     * @return list select values
+     * <pre>
+     * {@code
+     * @MapTable
+     * public class SimpleTable {
+     *     public SimpleTable(){}
+     *     public SimpleTable(String name){
+     *         this.myName = name;
+     *     }
+     *     @MapPrimaryKey
+     *     public long id;
+     *     @MapColumnName("name")
+     *     public String myName;
+     * }
+     * ISession session=Configure.getSession();
+     *  for (int i = 0; i < 10; i++) {
+     *     SimpleTable myTable=new SimpleTable("name"+i);
+     *     session.insert(myTable);
+     *  }
+     * List<String>  res=session.getListSelect(" select name from "+ session.getTableName(SimpleTable.class));
+     * }
+     * </pre>
+     */
+     <T> List<T> getListSelect(@NonNull String sql, Object... parameters);
 
     /**
      *Obtaining a dictionary of parameters grouped by a database table column, with a selection condition

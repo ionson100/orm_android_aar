@@ -267,16 +267,13 @@ class UtilsCompound {
                 default:{
                     if(cursor.isNull(i)){
                         field.set(o, null);
-                        return;
                     }else{
                         byte[] b = cursor.getBlob(i);
-                        //Base64.decode(baseStr, Base64.DEFAULT)
+
                         Object res= UtilsHelper.deserializeByte(b);
                         field.set(o, res);
-                        return;
+
                     }
-//                    String msg = "Не известный строковой тип:"+ fieldBase.typeName;
-//                    throw new RuntimeException(msg);
                 }
             }
         }catch (Exception exception){
@@ -287,7 +284,7 @@ class UtilsCompound {
 
 
 
-    static void CompoundFree(List<ItemField> listIf, Cursor cursor, Object o) throws Exception {
+    static void CompoundFree(List<ItemField> listIf, Cursor cursor, Object o) {
         for (ItemField str : listIf) {
             int i = cursor.getColumnIndex(str.columnNameRaw);
             if (i == -1) continue;
@@ -304,5 +301,78 @@ class UtilsCompound {
             Compound(metaData.listColumn,metaData.keyColumn,cursor,instance);
         }
      }
+    static Object extractedSwitchSelect(Cursor cursor, ItemField fieldBase, Field field, int i) throws Exception {
+
+        if (cursor.isNull(i)) {
+
+            return null;
+        }
+        switch (fieldBase.typeName) {
+
+            case "userType": {
+                IUserType data;
+                try {
+                    data = (IUserType) fieldBase.type.getClass().newInstance();
+                    String sd = cursor.getString(i);
+                    data.initBody(sd);
+                    return data;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            case "int":
+            case "Integer": {
+                return cursor.getInt(i);
+            }
+            case "Date": {
+                String f = cursor.getString(i);
+                return UtilsHelper.stringToDate(f);
+            }
+            case "UUID": {
+                return UUID.fromString(cursor.getString(i));
+            }
+            case "BigDecimal": {
+                return new BigDecimal(cursor.getString(i));
+            }
+            case "UUId":
+            case "String": {
+                return cursor.getString(i);
+            }
+            case "double":
+            case "Double": {
+                return cursor.getDouble(i);
+            }
+            case "float":
+            case "Float": {
+                return  cursor.getFloat(i);
+            }
+            case "long":
+            case "Long": {
+                return cursor.getLong(i);
+            }
+            case "short":
+            case "Short": {
+                return cursor.getShort(i);
+            }
+            case "byte":
+            case "Byte": {
+                Integer myInt = new Integer(cursor.getInt(i));
+                return myInt.byteValue();
+            }
+            case "boolean":
+            case "Boolean": {
+                return cursor.getInt(i) != 0;
+            }
+            case "[SJ": {
+                String json = cursor.getString(i);
+                return UtilsHelper.deserializeJson(json, field.getType());
+            }
+            case "[SB":
+            default: {
+                byte[] b = cursor.getBlob(i);
+                return UtilsHelper.deserializeByte(b);
+            }
+        }
+    }
 
 }

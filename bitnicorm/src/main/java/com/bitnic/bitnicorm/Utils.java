@@ -16,10 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/********************************************************************
- * Copyright © 2016-2017 OOO Bitnic                                 *
- * Created by OOO Bitnic on 08.02.16   corp@bitnic.ru               *
- * ******************************************************************/
 class Utils {
 
     private Utils(){}
