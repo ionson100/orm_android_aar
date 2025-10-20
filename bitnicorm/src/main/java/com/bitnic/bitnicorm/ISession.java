@@ -673,6 +673,7 @@ public interface ISession extends Closeable {
      *               This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *               and a public field marked with the primary key annotation.
      * @param <T>    The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
+     * @param <R> Return type
      * @return total number of records in the table
      * <pre>
      * {@code
@@ -680,11 +681,12 @@ public interface ISession extends Closeable {
      * </pre>
      *
      */
-    <T> int count(@NonNull Class<T> aClass);
+    <T,R> R count(@NonNull Class<T> aClass);
 
     /**
      * Gets the number of rows in a table, based on a condition
      * @param <T>    The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
+     * @param <R> Return type
      * @param aClass  Instances of the  represent classes and interfaces in a running Java application.
      *                This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *                and a public field marked with the primary key annotation.
@@ -699,7 +701,7 @@ public interface ISession extends Closeable {
      * </pre>
      *
      */
-    <T> int count(@NonNull Class<T> aClass, String where, Object... parameters);
+    <T,R> R count(@NonNull Class<T> aClass, String where, Object... parameters);
 
     /**
      * Checks if rows exist in a table

@@ -176,17 +176,14 @@ public class Configure implements ISession {
 
         List<String> sqlList = getStringListSqlCreateTable(ifNotExist, metaData);
         getStringAppend(metaData, sqlList);
-        String curSql = null;
-        try {
-            for (String sqlOne : sqlList) {
-                curSql = sqlOne;
-                Logger.I(sqlOne);
-                sqLiteDatabaseForWritable.execSQL(sqlOne);
-            }
-
-        } catch (Exception exception) {
-            throw new Exception("Scope Create table,Exception on execute command: " + curSql);
+        StringBuilder sqlBuilder=new StringBuilder();
+        for (String s : sqlList) {
+            sqlBuilder.append(System.lineSeparator()).append(s);
         }
+        String sql=sqlBuilder.toString();
+        Logger.I(sql);
+        sqLiteDatabaseForWritable.execSQL(sql);
+
 
     }
 
@@ -218,18 +215,18 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> int count(@NonNull Class<T> aClass) {
+    public <T,R> R count(@NonNull Class<T> aClass) {
         return count(aClass, null);
     }
 
     @Override
-    public <T> int count(@NonNull Class<T> aClass, String where, Object... parameters) {
+    public <T,R> R count(@NonNull Class<T> aClass, String where, Object... parameters) {
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData,"count","aClass");
         where = whereBuilderRaw(where, metaData);
 
         String sql = MessageFormat.format("SELECT COUNT(*) FROM {0} {1};", metaData.tableName, where);
-        return (int) executeScalar(sql, parameters);
+        return (R) executeScalar(sql, parameters);
     }
 
     @Override
