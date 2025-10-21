@@ -109,7 +109,12 @@ class InnerInsertBulk<F> {
                 }
             }
             case "UUID": {
-                return String.format("'%s'", o);
+                if (o == null) {
+                    return "null";
+                } else {
+                    return String.format("'%s'", o);
+                }
+
             }
             case "String": {
                 if (o == null) {
