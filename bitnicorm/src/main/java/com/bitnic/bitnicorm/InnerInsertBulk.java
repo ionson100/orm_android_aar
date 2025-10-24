@@ -92,6 +92,14 @@ class InnerInsertBulk<F> {
             case "userType":{
                 return  "'"+((IUserType)o).getString()+"'";
             }
+            case "LocalDateTime":{
+                if (o == null) {
+                    return "null";// Utils.dateToStringForSQLite(new Date(0));
+                } else {
+                    objectList.add(o);
+                    return "?";
+                }
+            }
             case "Date": {
                 if (o == null) {
                     return "null";// Utils.dateToStringForSQLite(new Date(0));

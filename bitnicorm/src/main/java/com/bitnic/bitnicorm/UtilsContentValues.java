@@ -1,8 +1,10 @@
 package com.bitnic.bitnicorm;
 
 import android.content.ContentValues;
+import android.os.Build;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 class UtilsContentValues {
@@ -68,6 +70,12 @@ class UtilsContentValues {
                 case "UUID":
                 case "BigDecimal": {
                     values.put(str.columnName, value.toString());
+                    return;
+                }
+                case "LocalDateTime":{
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        values.put(str.columnName, value.toString());
+                    }
                     return;
                 }
                 case "Date": {

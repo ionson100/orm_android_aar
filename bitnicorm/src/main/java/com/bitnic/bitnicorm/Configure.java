@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 public class Configure implements ISession {
 
 
+
     static boolean IsWriteLog = false;
     static String dataBaseName;
     private static DataBaseHelper myDbHelper;
@@ -869,6 +870,11 @@ public class Configure implements ISession {
     public <T> void objectFiller(Cursor cursor, T instance)  throws Exception {
         CacheMetaData<T> metaData = getCacheMetaData(instance.getClass());
         builderInstance(metaData,cursor,instance);
+    }
+
+    @Override
+    public <T> IQueryable<T> query(Class<T> aClass) {
+        return new ScopedValue<T>((ISession)this,aClass);
     }
 
     <T> ContentValues getInnerContentValuesForUpdate(CacheMetaData<T> data, PairColumnValue columnValues) {

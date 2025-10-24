@@ -1039,4 +1039,5 @@ public interface ISession extends Closeable {
      */
     <T> void objectFiller(Cursor cursor, T instance) throws Exception;
 
+    <T> IQueryable<T> query(Class<T> aClass);
 }

@@ -2,9 +2,11 @@ package com.bitnic.bitnicorm;
 
 import android.annotation.SuppressLint;
 import android.database.Cursor;
+import android.os.Build;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,6 +63,7 @@ class UtilsCompound {
 
      static void extractedSwitch(Cursor cursor, Object o, ItemFieldBase fieldBase, Field field, int i)  {
         try {
+
             switch (fieldBase.typeName) {
 
                 case "userType":{
@@ -91,6 +94,17 @@ class UtilsCompound {
                     var d = UtilsHelper.stringToDate(f);
                     //2025-09-30 23:16:10
                     field.set(o, d);
+                    return;
+                }
+                case "LocalDateTime": {
+                    if(cursor.isNull(i)){
+                        field.set(o, null);
+                        return;
+                    }
+                    var f = cursor.getString(i);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        field.set(o, LocalDateTime.parse(f));
+                    }
                     return;
                 }
                 case "UUID":{
@@ -327,6 +341,12 @@ class UtilsCompound {
             case "Date": {
                 String f = cursor.getString(i);
                 return UtilsHelper.stringToDate(f);
+            }
+            case "LocalDateTime": {
+                String f = cursor.getString(i);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    return LocalDateTime.parse(f);
+                }
             }
             case "UUID": {
                 return UUID.fromString(cursor.getString(i));

@@ -43,6 +43,7 @@ import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -2301,46 +2302,114 @@ public class TestMethod extends BaseTestClass {
 
     public void TestPartialSelect(){
         preInit();
-        ISession session = Configure.getSession();
-        session.dropTableIfExists(ParentT.class);
+        try (ISession session = Configure.getSession()) {
+            session.dropTableIfExists(ParentT.class);
 
-        try {
-            session.createTableIfNotExists(ParentT.class);
-        } catch (Exception e) {
+            try {
+                session.createTableIfNotExists(ParentT.class);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            for (int i = 0; i < 5; i++) {
+                ParentT t = new ParentT();
+                t.name1 = "name1";
+                t.name2 = "name2";
+                session.insert(t);
+            }
+            var p = session.getList(ParentT.class, null);
+            assertEquals(5, p.size());
+
+            var pb = session.getList(PartT.class, null);
+            assertEquals(5, pb.size());
+
+            try {
+                session.update(pb.get(0));
+            } catch (Exception ignored) {
+                assertTrue(true);
+            }
+            try {
+                session.insert(pb.get(0));
+            } catch (Exception ignored) {
+                assertTrue(true);
+            }
+            try {
+                session.delete(pb.get(0));
+            } catch (Exception ignored) {
+                assertTrue(true);
+            }
+            try {
+                session.insertBulk(pb.get(0));
+            } catch (Exception ignored) {
+                assertTrue(true);
+            }
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        for (int i = 0; i < 5; i++) {
-            ParentT t=new ParentT();
-            t.name1="name1";
-            t.name2="name2";
-            session.insert(t);
-        }
-        var p=session.getList(ParentT.class,null);
-        assertEquals(5,p.size());
 
-        var pb=session.getList(PartT.class,null);
-        assertEquals(5,pb.size());
+    }
 
-        try {
-            session.update(pb.get(0));
-        }catch (Exception ignored){
-            assertTrue(true);
+    @MapTable
+    static class MyTable2{
+        @MapPrimaryKey
+        public int id;
+
+        @MapColumnName("myDate")
+        //@MapColumnType("TIMESTAMP WITH TIME ZONE")
+        public LocalDateTime date= LocalDateTime.now().minusDays(1);
+    }
+
+    //public Date(int year, int month, int date) {
+    //        this(year, month, date, 0, 0, 0);
+    //    }
+    @Test
+    public void testDate() throws Exception {
+        preInit();
+        List<MyTable2> myTable;
+        try (ISession session = Configure.getSession()) {
+
+
+
+            session.query(MyTable2.class).dropTableIfExists();
+            session.query(MyTable2.class).createTable();
+
+            {
+                MyTable2 myTable2 = new MyTable2();
+                myTable2.date = LocalDateTime.now().minusDays(-1);
+                session.insert(myTable2);
+            }
+            {
+                MyTable2 myTable2 = new MyTable2();
+                myTable2.date = LocalDateTime.now();
+                session.insert(myTable2);
+            }
+            {
+                MyTable2 myTable2 = new MyTable2();
+                myTable2.date = LocalDateTime.now().plusDays(1);
+                session.insertBulk(myTable2);
+            }
+            List<MyTable2> tt=session.query(MyTable2.class).getList();
+
+            List<MyTable2> list=session.getList(MyTable2.class,null);
+            myTable = session.query(MyTable2.class).
+                    where( " \"myDate\" < ?", LocalDateTime.now().plusDays(100).toString()).
+                    getList();
+            //assert myTable.size() == 3;
+
+
+            myTable = session.query(MyTable2.class).where(" \"myDate\" > ?", LocalDateTime.now().plusDays(100).toLocalDate()).getList();
+            //assert myTable.isEmpty();
+
+            myTable = session.getList(MyTable2.class, " \"myDate\" between ? and ? ",
+                    LocalDateTime.now().plusHours(-1), LocalDateTime.now().plusHours(1));
+            assert myTable.size()==1;
+            LocalDateTime localDateTime=LocalDateTime.now().minusDays(100);
+            session.updateRows(MyTable2.class,new PairColumnValue().put("myDate",localDateTime),null);
+            list=session.getList(MyTable2.class,null);
+            assert list.get(0).date.toString().equals(localDateTime.toString());
+            var selectList=session.getListSelect(MyTable2.class,"myDate",null);
+            assert selectList.size()==3;
         }
-        try {
-            session.insert(pb.get(0));
-        }catch (Exception ignored){
-            assertTrue(true);
-        }
-        try {
-            session.delete(pb.get(0));
-        }catch (Exception ignored){
-            assertTrue(true);
-        }
-        try {
-            session.insertBulk(pb.get(0));
-        }catch (Exception ignored){
-            assertTrue(true);
-        }
+
 
     }
 
