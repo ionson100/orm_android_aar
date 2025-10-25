@@ -485,8 +485,6 @@ public class Configure implements ISession {
     @Override
     public <T> List<T> getListFree(@NonNull Class<T> aClass, String sql, Object... parameters) {
         CacheMetaData<?> metaData = CacheDictionary.getCacheMetaData(aClass);
-
-
         Logger.I(sql);
         List<T> list = new ArrayList<>();
         try (Cursor cursor = execSQLRaw(sql, parameters)) {

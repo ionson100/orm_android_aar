@@ -145,7 +145,7 @@ class ScopedValue<T> implements IQueryable<T> {
     }
 
     public int deleteRows() {
-        return iSession.deleteRows(aClass);
+        return iSession.deleteRows(aClass,whereCore(),this.objects);
     }
 
     public boolean tableExists() {
