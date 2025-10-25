@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation allows you to execute queries (getList, getListSelect, first, firstOrDefault, single, singleOrDefault,updateRows,deleteRows), with the where condition,б
+ * This annotation allows you to execute queries (toList, getListSelect, first, firstOrDefault, single, singleOrDefault,updateRows,deleteRows), with the where condition,б
  * the word 'where' is not required
  * <pre>
  * {@code

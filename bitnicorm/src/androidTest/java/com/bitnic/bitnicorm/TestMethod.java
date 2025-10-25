@@ -2387,16 +2387,16 @@ public class TestMethod extends BaseTestClass {
                 myTable2.date = LocalDateTime.now().plusDays(1);
                 session.insertBulk(myTable2);
             }
-            List<MyTable2> tt=session.query(MyTable2.class).getList();
+            List<MyTable2> tt=session.query(MyTable2.class).toList();
 
             List<MyTable2> list=session.getList(MyTable2.class,null);
             myTable = session.query(MyTable2.class).
                     where( " \"myDate\" < ?", LocalDateTime.now().plusDays(100).toString()).
-                    getList();
+                    toList();
             //assert myTable.size() == 3;
 
 
-            myTable = session.query(MyTable2.class).where(" \"myDate\" > ?", LocalDateTime.now().plusDays(100).toLocalDate()).getList();
+            myTable = session.query(MyTable2.class).where(" \"myDate\" > ?", LocalDateTime.now().plusDays(100).toLocalDate()).toList();
             //assert myTable.isEmpty();
 
             myTable = session.getList(MyTable2.class, " \"myDate\" between ? and ? ",

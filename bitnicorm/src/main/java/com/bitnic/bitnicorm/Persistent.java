@@ -20,8 +20,9 @@ public class Persistent {
 
     /**
      * Where the object was obtained from, from the database or a new one created
-     * true - an object obtained from the database
-     * false - the object was created on the client and was not saved in the database
+     *
+     *@return  true - an object obtained from the database, false - the object was created on the client and was not saved in the database
+     *
      */
     public boolean isPersistent(){
         return isPersistent;

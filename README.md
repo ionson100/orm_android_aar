@@ -19,9 +19,9 @@
 | [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                               |
 | [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                     |
 | [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                         |
-| [Получение не полной записи из таблицы](#312)                 | [executeSQL](#executeSQL)                               |
-| [Как подключить к проекту](#312312)                           | [any](#any)                                             |
-|                                                               | [tableExists](#tableExists)                             |
+| [Fluent Interface](#Fluent)                                   | [executeSQL](#executeSQL)                               |
+| [Получение не полной записи из таблицы](#312)                 | [any](#any)                                             |
+| [Как подключить к проекту](#312312)                           | [tableExists](#tableExists)                             |
 |                                                               | [getTableName](#getTableName)                           |
 |                                                               | [createTable](#createTable)                             |
 |                                                               | [createTableIfNotExists](#createTableIfNotExists)       |
@@ -106,6 +106,9 @@ try (ISession session = Configure.getSession()) {
 
     session.insertBulk(list);
     List<MyTable> result = session.getList(MyTable.class);
+    //or
+    List<MyTable> result = session.query(MyTable.class).toList()
+    
 } catch (Exception e) {
     throw new RuntimeException(e);
 }
@@ -189,7 +192,7 @@ try (ISession session = Configure.getSession()) {
  "externalizable" BLOB,
  "name" TEXT);
 ```
-```javascript
+```java
 ISession session = Configure.getSession();
 session.dropTableIfExists(MyUser.class);
 try {
@@ -636,7 +639,8 @@ for (int i = 0; i <  10 ; i++) {
 String sql="select name, age FROM "+session.getTableName(TableUser.class);
 
 List<TableUserPartial> list= session.getListFree(TableUserPartial.class,sql);
-
+//or
+List<TableUserPartial> list= session.query(TableUserPartial.class).rawSqlSelect(sql).toList();
 ```
 
 
@@ -882,7 +886,7 @@ ContentValues contentValues=sesssion.getContentValues(new MyTable);
 
 #### < T > ContentValues getContentValuesForUpdate(@NonNull Class<T> aClass,PairColumnValue columnValues) <a name="getContentValuesForUpdate"></a>
 Получение объекта ```ContentValues``` . Тип ```item``` должен реализовывать аннотации маппинга. \
-Объект ```ContentValues``` получает данные по всем полям введенных пользователем в PairColumnValue, как правило, может использоваться 
+Объект ```ContentValues``` получает данные по всем полям введенных пользователем в PairColumnValue, как правило, может использоваться
 при обновлении записи в таблице по условию равенства первичного ключа.
 ```java
 ISession session=Configure.getSession();
@@ -970,7 +974,7 @@ try (Cursor cursor = session.execSQLRaw(sql)) {
 #### < T > void objectFiller(Cursor cursor, T instance) throws Exception
 Вспомогательный метод, применяется при обходе курсора, заполняет из курсора ранее созданный объект. \
 Класс типа объекта может быть произвольным типом или типом, ассоциированным с таблицей, единственное условие: название полей типа, или колонок таблицы (аннотации)
-должны совпадать с названием колонок в строке Sql запроса на выборку. 
+должны совпадать с названием колонок в строке Sql запроса на выборку.
 Возможна ошибка при приведении типа полей с полученным типом из курсора.\
 
 Пример:
@@ -1088,13 +1092,121 @@ public class TableUser {
 }
 ```
 
+### Fluent Interface <a name="Fluent"></a>
+На основе интерфейса ```ISession``` создан интерфейс обертка ```IQueryable```, позволяет формировать запросы цепочкой методов. \
+Может кому то покажется удобным, он типичный, как у всех орм, стоит отметить несколько моментов: \
+При использовании ```rawSqlSelect``` можно делать выборку не только по типам, чьи классы отмечены аннотацией,
+но и по произвольным классам с отрытым конструктором без параметра. Главное, что бы совпадали названия полей с полями выборки.
+И так же можно производить итерация по курсору, без создания списка.\
+При применениях перегрузки ```toString()``` можно посмотреть запрос в текстовом виде. \
+Примеры реализации:
+```java
+    @MapTable
+    class Master {
+    
+    @MapPrimaryKey
+    public int id;
+    
+    @MapColumn
+    public int age=10;
+    
+    @MapColumn
+    public String name="name";
+    
+    @MapColumn
+    public LocalDateTime dateTime = LocalDateTime.now().minusDays(1);
+    }
+    
+    class PartialMaster {
+        public int id;
+        
+        public int age;
+    }
+
+try (ISession session = Configure.getSession()) {
+    session.query(Master.class).dropTableIfExists();
+    session.query(Master.class).createTable();
+
+    List<Master>  list=new ArrayList<>(20);
+    for (int i = 0; i < 20; i++) {
+        Master master=new Master();
+        master.age=i;
+        master.dateTime=LocalDateTime.now().plusDays(i);
+        master.name="name"+i;
+        list.add(master);
+
+    }
+    session.insertBulk(list);
+
+    List<PartialMaster> listT=session.query(PartialMaster.class).rawSqlSelect("select id age from "+session.getTableName(Master.class)).toList();
+    assert listT.size()==20;
+
+    List<Master> listT3=session.query(Master.class).rawSqlSelect("select * from "+session.getTableName(Master.class))
+        .where("name not null").where("age > ?",-1).orderBy("name").toList();
+    assert listT3.size()==20;
+
+    String sql= session.query(Master.class)
+        .rawSqlSelect("select * from "+session.getTableName(Master.class))
+        .where("name not null")
+        .where("age > ?",-1)
+        .orderBy("name").toString();
+    Log.i("____sql____",sql);
+
+    session.query(PartialMaster.class).rawSqlSelect("select * from "+session.getTableName(Master.class))
+        .where("name not null").orderBy("age")
+        .iterator(master -> Log.i("____age_____",String.valueOf(master.age)));
+
+    List<Integer> integers=new ArrayList<>();
+    session.query(Master.class).where(" name not null").iterator(master -> integers.add(master.age));
+    assert integers.size()==20;
+
+    int count= session.query(Master.class).where("name not null").where("age > ? ",5).orderBy("mame").count();
+    assert count==14;
+
+    var o=session.query(Master.class)
+        .where(" name = ?","name5")
+        .where("age==?",5)
+        .orderBy("name")
+        .orderBy("age")
+        .limit(10).toList();
+    assert o.size()==1;
+
+    o=session.query(Master.class).limitOffSet(3,5).toList();
+    assert o.size()==3;
+
+    var r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(5)).firstOrDefault();
+    assert r!=null;
+
+    r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(50)).firstOrDefault();
+    assert r==null;
+    r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(5)).singleOrDefault();
+    assert r==null;
+    //r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(50)).single(); //Error
+
+    var t=session.query(Master.class).groupBy("name");
+    assert t.size()==20;
+
+    var names=session.query(Master.class).distinctBy("name");
+    assert t.size()==20;
+
+    String tempSql="select * from "+session.getTableName(Master.class);
+    var listTemp=session.query(PartialMaster.class).rawSqlSelect(tempSql).where("age > ?",-1).toList();
+    assert listTemp.size()==20;
+
+    var any=session.query(Master.class).where("age < 0").any();
+    assert any==false;
+
+}
+```
+
+
 ### interface IUserType
 ### Маркировка объектов через наследование class Persistent <a name="Persistent"></a>
 Одна из проблем при создании орм, сохранять сведения об объекте, в нашем случае это сведения
 откуда получен объект, из базы или нет, в разных орм - разный подход, например создание прокси объекта на основе данного типа (java, C#), маркировка объекта специальным атрибутом(C#)и т.д.
 В нашем случае, это наследования объекта, описывающего табличную сущность, от class Persistent.
 В этом классе всего одно булево поле ``` boolean isPersistent;```, которое характеризует происхождение объекта (true-получен из базы false-создан на клиенте и в базе не сохранен)
-на основе этого можно принимать решение, что делать с объектом при помещении его в метод ```save```, вставлять или обновлять, в то же время, это поле решает: 
+на основе этого можно принимать решение, что делать с объектом при помещении его в метод ```save```, вставлять или обновлять, в то же время, это поле решает:
 выкинуть ли исключение при вставке в базу объекта полученного ранее из базы, удаление или обновление локально созданного объекта.\
 Применение этого наследования не догма, вы можете отказаться, и сами следить откуда получен объект, в этом случае - вы не сможете применять метод ```save```.
 
@@ -1154,9 +1266,9 @@ for (int i = 0; i <5; i++) {
 //session.updateRows(SubMain.class,new PairColumnValue().put("name","newName"),null);//error table read only
 ```
 > [!NOTE]\
-> Обратите внимание, все суб классы я пометил аннотацией: ```@MapTableReadOnly```. 
+> Обратите внимание, все суб классы я пометил аннотацией: ```@MapTableReadOnly```.
 > Это предохраняет мою таблицу, если я буду модифицировать таблицу через объекты этих суб классов или указывая тип суб классов. \
-> При попытке модификации таблицы - я получу ошибку. 
+> При попытке модификации таблицы - я получу ошибку.
 
 Еше один способ, получение типизированного списка через метод [getListFree](#getListFree), нужно подготовить запрос на выборку,
 это может быть JOIN или UNION SELECT, основное требование, что бы целевой тип имел поля, с названием,  совпадающими с полями запроса,

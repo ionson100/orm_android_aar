@@ -139,7 +139,7 @@ public interface ISession extends Closeable {
 
     /**
      * Batch insert, please note that if objects contain incremental primary keys, these key fields are not updated after insertion.
-     * @param object A collection of objects of class type must be marked with the annotation {@link MapTable} or {@link MapTableName}
+     * @param object A array of objects of class type must be marked with the annotation {@link MapTable} or {@link MapTableName}
      * @param <T>    The generic type must represent a class marked with the annotation {@link MapTable} or {@link MapTableName}
      * <pre>
      * {@code
@@ -201,7 +201,7 @@ public interface ISession extends Closeable {
      * @param where        A fragment of a SQL query script from a condition, where
      *                     the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                     and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters      A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters      A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>          The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @return Number of affected records or 0
      * <pre>
@@ -234,7 +234,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @return list parameters of type T
      * <pre>
@@ -252,7 +252,7 @@ public interface ISession extends Closeable {
      * }
      * ISession session=Configure.getSession();
      * session.insert(new SimpleTable("name1"));
-     * var list=session.getList(SimpleTable.class,"name = ?","name1");
+     * var list=session.toList(SimpleTable.class,"name = ?","name1");
      * }
      * </pre>
      */
@@ -263,7 +263,7 @@ public interface ISession extends Closeable {
      * @param aClass Any class of type, the class must have fields that match the table column names
      *               and the same type of fields that you expect to get from the database table.
      * @param sql Full SQL request, you can specify parameters
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T> Custom type, may not contain table annotations
      * @return List of parameters of type T
      */
@@ -293,7 +293,7 @@ public interface ISession extends Closeable {
      * }
      * ISession session=Configure.getSession();
      * session.insert(new SimpleTable("name1"));
-     * var list=session.getList(SimpleTable.class);
+     * var list=session.toList(SimpleTable.class);
      * //select all rows
      * }
      * </pre>
@@ -305,7 +305,7 @@ public interface ISession extends Closeable {
      *
      * @param sql     SQL script in raw form, the ability to change values
      *                with the ? symbol, the observed values must be written to the object parameter, in the order in which they are written in the script.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @return parameters of any type
      * <pre>
      * {@code
@@ -359,7 +359,7 @@ public interface ISession extends Closeable {
      * Executing a raw query to the database
      * @param sql     SQL script in raw form, the ability to change values
      *                with the ? symbol, the observed values must be written to the object parameter, in the order in which they are written in the script.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * <pre>
      * {@code
      * @MapTable
@@ -374,7 +374,7 @@ public interface ISession extends Closeable {
      * Executing a raw query to the database, obtaining a cursor
      * @param sql     SQL script in raw form, the ability to change values
      *                with the ? symbol, the observed values must be written to the object parameter, in the order in which they are written in the script.
-     * @param objects A collection of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
+     * @param objects A array of objects that replace the `?` symbols in a script, the order of the objects matches the order of the `?` symbols.
      * @return @see <a href="https://developer.android.com/reference/android/database/Cursor">Cursor</a>
      * <pre>
      * {@code
@@ -518,7 +518,7 @@ public interface ISession extends Closeable {
     <T> boolean tableExists(@NonNull Class<T> aClass);
 
     /**
-     *  * Checks if a table exists in the database.
+     *  Checks if a table exists in the database.
      * @param tableName  particular table name
      * @return true - is existing, false - not exists
      */
@@ -540,7 +540,7 @@ public interface ISession extends Closeable {
      * var res=session.deleteRows(SimpleTable.class));
      * // delete all rows
      * assertEquals(10,res);
-     * var list=session.getList(SimpleTable.class);
+     * var list=session.toList(SimpleTable.class);
      * assertEquals(0,list.size());
      * }
      * </pre>
@@ -557,7 +557,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @return Number of affected records or 0
      * <pre>
      * {@code
@@ -568,7 +568,7 @@ public interface ISession extends Closeable {
      * var res=session.deleteRows(SimpleTable.class,"name not null"));
      * // delete rows only where name not null
      * assertEquals(10,res);
-     * var list=session.getList(SimpleTable.class);
+     * var list=session.toList(SimpleTable.class);
      * assertEquals(0,list.size());
      * }
      * </pre>
@@ -673,7 +673,7 @@ public interface ISession extends Closeable {
      *               This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *               and a public field marked with the primary key annotation.
      * @param <T>    The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     * @param <R> Return type
+     * @param <r> Return type
      * @return total number of records in the table
      * <pre>
      * {@code
@@ -681,19 +681,19 @@ public interface ISession extends Closeable {
      * </pre>
      *
      */
-    <T,R> R count(@NonNull Class<T> aClass);
+    <T, r> r count(@NonNull Class<T> aClass);
 
     /**
      * Gets the number of rows in a table, based on a condition
      * @param <T>    The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     * @param <R> Return type
+     * @param <r> Return type
      * @param aClass  Instances of the  represent classes and interfaces in a running Java application.
      *                This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *                and a public field marked with the primary key annotation.
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols. A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols. A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @return number of records in a table with selection condition
      * <pre>
      * {@code
@@ -701,7 +701,7 @@ public interface ISession extends Closeable {
      * </pre>
      *
      */
-    <T,R> R count(@NonNull Class<T> aClass, String where, Object... parameters);
+    <T, r> r count(@NonNull Class<T> aClass, String where, Object... parameters);
 
     /**
      * Checks if rows exist in a table
@@ -737,7 +737,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @return true - there are records, false - no entries
      * <pre>
      * {@code
@@ -765,7 +765,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @return object of type T or null
      * <pre>
      * {@code
@@ -799,7 +799,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @return parameters of type T or {@link Exception}
      * @throws Exception <pre>
@@ -832,7 +832,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @throws Exception <pre>
      * {@code
@@ -859,14 +859,14 @@ public interface ISession extends Closeable {
     <T> T single(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception;
 
     /**
-     * Returns a single object; if there is none or it is not the only one, null is returned.
+     * Returns a single object; if there is none, or it is not the only one, null is returned.
      * @param aClass  Instances of the  represent classes and interfaces in a running Java application.
      *                This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *                and a public field marked with the primary key annotation.
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * <pre>
      * {@code
@@ -898,7 +898,7 @@ public interface ISession extends Closeable {
      * @param where      A fragment of a SQL query script from a condition, where
      *                   the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                   and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters    A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters    A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>        The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @param <D>        any type
      * @return List parameters any types
@@ -962,7 +962,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @return result map, key is the grouping value, value is the list of parameters in which this value occurs
      */
@@ -977,7 +977,7 @@ public interface ISession extends Closeable {
      * @param where   A fragment of a SQL query script from a condition, where
      *                the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
      *                and parameter values are entered into the object collection in the order they appear in the query.
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @return List of unique values
      */
@@ -1039,5 +1039,48 @@ public interface ISession extends Closeable {
      */
     <T> void objectFiller(Cursor cursor, T instance) throws Exception;
 
+
+    /**
+     /** Entry point to Fluent Interface
+     * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
+     *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
+     *                 and a public field marked with the primary key annotation.
+     * @param <T>  The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
+     * @return IQueryable
+     */
     <T> IQueryable<T> query(Class<T> aClass);
+
+    /**
+     * Called on each iteration of the cursor, without creating a list
+     * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
+     *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
+     *                 and a public field marked with the primary key annotation.
+     *             
+     * @param <T>  The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}.
+     *            If you use the rawSqlSelect function, the class type can be arbitrary, without annotations.
+     *
+     * @param action Called on each cursor iteration
+     * @param where      A fragment of a SQL query script from a condition, where
+     *                   the condition, the word where, need not be written, string parameters are replaced with the parameter substitution character `?`,
+     *                   and parameter values are entered into the object collection in the order they appear in the query.
+     * @param parameters    A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
+     */
+    <T> void iterator(@NonNull Class<T> aClass,@NonNull IAction<T> action,String where,Object... parameters);
+
+    /**
+     * Called on each iteration of the cursor, without creating a list
+     * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
+     *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
+     *                 and a public field marked with the primary key annotation.
+     *                  If you use the rawSqlSelect function, the class type can be arbitrary, without annotations.
+     * @param <T>  The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}.
+     *            If you use the rawSqlSelect function, the class type can be arbitrary, without annotations.
+     *
+     * @param action Called on each cursor iteration
+     * @param sql The full database query string
+     * @param parameters    A array of parameters that replace the `?` symbols in a script, the order of the parameter
+     */
+    <T> void iteratorFree(@NonNull Class<T> aClass,@NonNull String sql, IAction<T> action,Object... parameters);
+
+
 }

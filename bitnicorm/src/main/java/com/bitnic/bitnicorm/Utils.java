@@ -84,7 +84,7 @@ class Utils {
 
     }
 
-    public static String getStringInsert(String tableName,ContentValues contentValues){
+     static String getStringInsert(String tableName,ContentValues contentValues){
         if(Configure.IsWriteLog){
             StringBuilder stringBuilder=new StringBuilder();
             contentValues.valueSet().forEach(stringObjectEntry -> {
@@ -95,7 +95,7 @@ class Utils {
         return null;
     }
 
-    public static String getStringUpdate(String tableName,ContentValues contentValues,String where){
+     static String getStringUpdate(String tableName,ContentValues contentValues,String where){
         if(Configure.IsWriteLog){
             StringBuilder stringBuilder=new StringBuilder();
             contentValues.valueSet().forEach(stringObjectEntry -> {
@@ -115,7 +115,7 @@ class Utils {
     }
 
 
-    public static void builderSqlNew(CacheMetaData d, ContentValues contentValues, Map<String, Object> objectMap){
+     static void builderSqlNew(CacheMetaData d, ContentValues contentValues, Map<String, Object> objectMap){
         objectMap.forEach((s, o) -> {
             var itemField=getItemField(d.listColumn,s);
             if(itemField==null){
