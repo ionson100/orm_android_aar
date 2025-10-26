@@ -65,6 +65,7 @@ class UtilsContentValues {
                 case "userType":{
                     String json = ((IUserType) value).getString();
                     values.put(str.columnName, json);
+                    return;
                 }
 
                 case "UUID":

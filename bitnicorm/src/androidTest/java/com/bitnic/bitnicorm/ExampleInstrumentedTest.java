@@ -302,7 +302,7 @@ public class ExampleInstrumentedTest extends BaseTestClass {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        var item=11;
+        var item=2;
         for (int i = 0; i < item; i++) {
             TableUser tableUser=new TableUser();
             tableUser.userClass=new UserClass();
@@ -311,6 +311,7 @@ public class ExampleInstrumentedTest extends BaseTestClass {
             session.insert(tableUser);
         }
 
+        var o=session.getList(TableUser.class,null);
 
         List<UserClass>tableUsers1=session.getListSelect(TableUser.class,"user",null);
         assertEquals(item,tableUsers1.size());

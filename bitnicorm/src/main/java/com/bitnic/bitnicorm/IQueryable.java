@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * The interface Queryable.Allows you to create a chain of queries to the database (Fluent Interface)
@@ -13,20 +14,7 @@ import java.util.Map;
  */
 public interface IQueryable<T> {
 
-    /**
-     * A custom query with a condition and the ability to insert parameters
-     *
-     * @param text       the text
-     * @param parameters A collection of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
-     * @return the queryable
-     * <pre>
-     * {@code
-     * ISession session=Configure.getSession();
-     * var list = session.query(MyTable.class).textSql(" age=? order by name",30).toList();
-     * }
-     * </pre>
-     */
-    IQueryable<T> textSql(@NonNull String text, Object... parameters);
+
 
     /**
      * Where queryable.
@@ -274,7 +262,7 @@ public interface IQueryable<T> {
      * }
      * </pre>
      */
-    List<?> select(@NonNull String columnName);
+    List<Object> select(@NonNull String columnName);
 
     /**
      * Drops the table if it exists.
@@ -379,10 +367,240 @@ public interface IQueryable<T> {
      * }
      * </pre>
      */
-     void iterator(IAction<T> action);
+     void iterator(ITask<T> action);
+
+    /** Getting a list of values or one table field, the field can be calculated,
+     * @param expression Expression value string
+     * @return CompletableFuture&lt;List&lt;T&gt;&gt;
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * var list = session.query(MyTable.class).where("age>10").selectExpression("age*10");
+     * }
+     * </pre>
+     */
+    List<Object> selectExpression(String expression);
+
+    /**
+     * Gets a wrapper around the CompletableFuture's toList method, allowing non-blocking operations to be performed on the main thread.
+     * @return CompletableFuture&lt;List&lt;T&gt;&gt;
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * session.query(MyTable.class).toListAsync()
+     * .handleAsync((myTables, throwable) -> {
+     *     if(throwable!=null){
+     *          List<MyTable> list1 = new ArrayList<>();
+     *          return list1;
+     *     }
+     *     return myTables;
+     *
+     *  }).thenAcceptAsync(myTables -> {
+     *       for (MyTable myTable : myTables) {
+     *            list.add(myTable);
+     *            Log.i("____________",myTable.name);
+     *        }
+     *  });
+     * }
+     * </pre>
+     */
+    CompletableFuture<List<T>> toListAsync();
+
+    /**
+     *  Gets a wrapper around the CompletableFuture's select method, allowing non-blocking operations to be performed on the main thread.
+     * @param columnName column name of table
+     * @return CompletableFuture&lt;List&lt;Object&gt;&gt;
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * List<String> list = new ArrayList<>();
+     * CompletableFuture<List<Object>> f;
+     * f = session.query(MyTable.class).where("age > ?",-1).selectAsync("name");
+     * f.thenAcceptAsync(objects -> {
+     *     for (Object o : objects) {
+     *         list.add((String) o);
+     *         Log.i("____________",String.valueOf(o));
+     *     }
+     * });
+     *
+     * }
+     * </pre>
+     */
+    CompletableFuture<List<Object>> selectAsync(@NonNull String columnName);
+
+    /**
+     * Gets a wrapper around the CompletableFuture's selectExpression method, allowing non-blocking operations to be performed on the main thread.
+     * @param expression Expression value string
+     * @return CompletableFuture&lt;List&lt;Object&gt;&gt;
+     *
+     * <pre>
+     * {@code
+     *  session.query(MyTable.class).selectAsync("name").thenAcceptAsync(list -> {
+     *          binding.textviewFirst.setText(String.valueOf(list.size()));
+     *  });
+     * }
+     * </pre>
+     */
+    CompletableFuture<List<Object>> selectExpressionAsync(@NonNull String expression);
 
 
+    /**
+     * Gets a wrapper around the CompletableFuture's any method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @return CompletableFuture&lt;Boolean&gt;
+     *
+     * <pre>
+     * {@code
+     * session.query(MyTable.class).anyAsync().thenAcceptAsync(any -> {
+     *     binding.textviewFirst.setText(String.valueOf(any));
+     * });
+     *
+     * }
+     * </pre>
+     */
+    CompletableFuture<Boolean> anyAsync();
 
+    /**
+     * Gets a wrapper around the CompletableFuture's count method, allowing non-blocking operations to be performed on the main thread.
+     * @return CompletableFuture&lt;Integer&gt;
+     *
+     * <pre>
+     * {@code
+     * session.query(MyTable.class).anyAsync().thenAcceptAsync(count -> {
+     *    binding.textviewFirst.setText(String.valueOf(count));
+     * });
+     *
+     * }
+     * </pre>
+     */
+    CompletableFuture<Integer> countAsync();
+
+    /**
+     *  Gets a wrapper around the CompletableFuture's updateNow method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @return CompletableFuture &lt;List&lt;Object&gt;&gt;
+     *
+     * <pre>
+     * {@code
+     *  session.query(MyTable.class)
+     *     .update("name","newName")
+     *     .where("age = ",10)
+     *     .updateNowAsync()
+     *     .thenAcceptAsync(integer -> {
+     *         Log.i("update",String.valueOf(integer));
+     *     });
+     *
+     * }
+     * </pre>
+     */
+    CompletableFuture<Integer> updateNowAsync();
+
+    /**
+     *  Gets a wrapper around the CompletableFuture's distinctBy method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @param columnName column name of table
+     * @return CompletableFuture&lt;List&lt;Object&gt;&gt;
+     *
+     * <pre>
+     * {@code
+     * session.query(MyTable.class).distinctByAsync("name").thenAcceptAsync(list -> {
+     *     binding.textviewFirst.setText(String.valueOf(list.size()));
+     * });
+     *
+     * }
+     * </pre>
+     */
+    CompletableFuture<List<Object>> distinctByAsync(@NonNull String columnName);
+
+    /**
+     *  Gets a wrapper around the CompletableFuture's groupBy method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @param columnName column name of table
+     * @return CompletableFuture&lt;Map&lt;Object, List&lt;T&gt;&gt;&gt;
+     *
+     * <pre>
+     * {@code
+     * session.query(MyTable.class)
+     *      .where("name not null")
+     *      .groupByAsync("age")
+     *      .thenAcceptAsync(list -> {
+     *          binding.textviewFirst.setText(String.valueOf(list.size()));
+     *      });
+     *
+     * }
+     * </pre>
+     */
+    CompletableFuture<Map<Object, List<T>>> groupByAsync(@NonNull String columnName);
+
+
+    /**
+     *  Gets a wrapper around the CompletableFuture's singleOrDefault method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @return CompletableFuture&lt;T&gt;
+     *
+     * <pre>
+     * {@code
+     * session.query(MyTable.class)
+     *       .singleOrDefaultAsync()
+     *       .thenAcceptAsync(myTable -> {
+     *           binding.textviewFirst.setText(myTable==null?"none":myTable.name);
+     *       });
+     * }
+     * </pre>
+     */
+    CompletableFuture<T> singleOrDefaultAsync();
+
+    /**
+     *  Gets a wrapper around the CompletableFuture's firstOrDefault method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @return CompletableFuture&lt;T&gt;
+     *
+     * <pre>
+     * {@code
+     * session.query(MyTable.class)
+     *       .firstOrDefaultAsync()
+     *       .thenAcceptAsync(myTable -> {
+     *           binding.textviewFirst.setText(myTable==null?"none":myTable.name);
+     *       });
+     * }
+     * </pre>
+     */
+    CompletableFuture<T> firstOrDefaultAsync();
+
+    /**
+     * Gets a wrapper around the CompletableFuture's getById method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @param primaryKey Primary key value
+     * @return CompletableFuture&lt;T&gt;
+     *
+     * <pre>
+     * {@code
+     *  session.query(MyTable.class).getByIdAsync(5).thenAcceptAsync(myTable -> {
+     *       binding.textviewFirst.setText(myTable==null?"none":myTable.name);
+     * });
+     * }
+     * </pre>
+     */
+    CompletableFuture<T> getByIdAsync( @NonNull Object primaryKey);
+
+    /**
+     * Gets a wrapper around the CompletableFuture's getById method, allowing non-blocking operations to be performed on the main thread.
+     *
+     * @param primaryKey Primary key value
+     * @return T object
+     *
+     * <pre>
+     * {@code
+     *  session.query(MyTable.class).getByIdAsync(5).thenAcceptAsync(myTable -> {
+     *       binding.textviewFirst.setText(myTable==null?"none":myTable.name);
+     * });
+     * }
+     * </pre>
+     */
+    T getById( @NonNull Object primaryKey);
 
 
 

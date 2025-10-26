@@ -69,10 +69,11 @@ class UtilsCompound {
                 case "userType":{
                     IUserType data;
                     try {
-                        data = (IUserType) fieldBase.type.getClass().newInstance();
+                        data = (IUserType) fieldBase.aClassUserType.newInstance();
                         String sd = cursor.getString(i);
                         data.initBody(sd);
                         field.set(o, data);
+                        return;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -326,7 +327,7 @@ class UtilsCompound {
             case "userType": {
                 IUserType data;
                 try {
-                    data = (IUserType) fieldBase.type.getClass().newInstance();
+                    data = (IUserType) fieldBase.aClassUserType.newInstance();
                     String sd = cursor.getString(i);
                     data.initBody(sd);
                     return data;

@@ -6,7 +6,7 @@ package com.bitnic.bitnicorm;
  *
  * @param <T> the type parameter
  */
-public  interface IAction<T> {
+public  interface ITask<T> {
     /**
      * Action.
      *

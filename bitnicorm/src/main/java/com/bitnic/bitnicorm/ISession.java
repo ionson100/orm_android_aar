@@ -390,7 +390,7 @@ public interface ISession extends Closeable {
      *     public String myName;
      * }
      * ISession session=Configure.getSession();
-     * Cursor cursor= execSQLRaw("select * from "+ session.getTableName(SimpleTable.class));
+     * Cursor cursor= execSQLRawInner("select * from "+ session.getTableName(SimpleTable.class));
      * }
      * </pre>
      */
@@ -417,7 +417,7 @@ public interface ISession extends Closeable {
      *     public String myName;
      * }
      * ISession session=Configure.getSession();
-     * Cursor cursor= execSQLRaw("select * from "+ session.getTableName(SimpleTable.class));
+     * Cursor cursor= execSQLRawInner("select * from "+ session.getTableName(SimpleTable.class));
      * }
      * </pre>
      */
@@ -1065,7 +1065,7 @@ public interface ISession extends Closeable {
      *                   and parameter values are entered into the object collection in the order they appear in the query.
      * @param parameters    A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      */
-    <T> void iterator(@NonNull Class<T> aClass,@NonNull IAction<T> action,String where,Object... parameters);
+    <T> void iterator(@NonNull Class<T> aClass, @NonNull ITask<T> action, String where, Object... parameters);
 
     /**
      * Called on each iteration of the cursor, without creating a list
@@ -1080,7 +1080,24 @@ public interface ISession extends Closeable {
      * @param sql The full database query string
      * @param parameters    A array of parameters that replace the `?` symbols in a script, the order of the parameter
      */
-    <T> void iteratorFree(@NonNull Class<T> aClass,@NonNull String sql, IAction<T> action,Object... parameters);
+    <T> void iteratorFree(@NonNull Class<T> aClass, @NonNull String sql, ITask<T> action, Object... parameters);
+
+    /**
+     * Gets an object from the database by the primary key value; if the record is not found, null is returned.
+     * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
+     *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
+     *                 and a public field marked with the primary key annotation.
+     * @param primaryKey Primary key value
+     * @param <T>  The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}.
+     * @return T object
+     *
+     * <pre>
+     * {@code
+     *  MyTable table = Configure.getSessionAutoClose().getById(5);
+     * }
+     * </pre>
+     */
+    <T> T getById(@NonNull Class<T> aClass, @NonNull Object primaryKey);
 
 
 }

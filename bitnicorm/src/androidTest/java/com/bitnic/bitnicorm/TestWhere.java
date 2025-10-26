@@ -145,7 +145,7 @@ public class TestWhere extends BaseTestClass {
         try {
             if (!session.tableExists(SimpleTable.class)) {
                 session.createTable(SimpleTable.class);
-                //session.execSQLRaw("script",null);
+                //session.execSQLRawInner("script",null);
                 List<SimpleTable>  list=new ArrayList<>();
                 for (int i = 0; i < 10; i++) {
                     list.add(new SimpleTable());

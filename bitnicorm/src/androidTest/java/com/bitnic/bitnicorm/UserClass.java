@@ -3,9 +3,11 @@ package com.bitnic.bitnicorm;
 
 import com.google.gson.Gson;
 
+
 public class UserClass implements IUserType
 {
 
+    public UserClass(){}
     public String name;
     public int age;
     @Override

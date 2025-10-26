@@ -99,6 +99,8 @@ class AnnotationOrm {
 
                 if (userField) {
                     fi.typeName="userType";
+                    fi.aClassUserType=f.getType();
+
                 }
 
                 if(jsonSerialise!=null){

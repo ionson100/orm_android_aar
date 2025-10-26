@@ -12,7 +12,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 class DataBaseHelper extends SQLiteOpenHelper {
 
 
-    private IAction<SQLiteDatabase> iOnOpenHelper;
+    private ITask<SQLiteDatabase> iOnOpenHelper;
 
     /**
      * Instantiates a new Data base helper.
@@ -33,7 +33,7 @@ class DataBaseHelper extends SQLiteOpenHelper {
      * @param version       the version
      * @param iOnOpenHelper the on open helper
      */
-    public DataBaseHelper(Context context, String databasePath, int version, IAction<SQLiteDatabase> iOnOpenHelper) {
+    public DataBaseHelper(Context context, String databasePath, int version, ITask<SQLiteDatabase> iOnOpenHelper) {
         super(context, databasePath, null, version);
         this.iOnOpenHelper = iOnOpenHelper;
     }

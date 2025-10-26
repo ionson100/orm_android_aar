@@ -19,17 +19,13 @@ import android.database.sqlite.SQLiteDatabase;
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
-import java.io.StreamCorruptedException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Root type for working with ORM
@@ -43,6 +39,7 @@ public class Configure implements ISession {
 
     private SQLiteDatabase sqLiteDatabaseForReadable = null;
     private SQLiteDatabase sqLiteDatabaseForWritable = null;
+    private boolean isAutoClose;
 
     private Configure() {
         sqLiteDatabaseForReadable = GetSqLiteDatabaseForReadable();
@@ -141,7 +138,7 @@ public class Configure implements ISession {
         myDbHelper = new DataBaseHelper(context, Configure.dataBaseName, version);
     }
 
-    private void InitCtor(String dataBaseName, int version, Context context, IAction<SQLiteDatabase> iOnOpenHelper) {
+    private void InitCtor(String dataBaseName, int version, Context context, ITask<SQLiteDatabase> iOnOpenHelper) {
         Configure.dataBaseName = dataBaseName;
         myDbHelper = new DataBaseHelper(context, Configure.dataBaseName, version, iOnOpenHelper);
     }
@@ -153,7 +150,38 @@ public class Configure implements ISession {
      * @return object {@link ISession}
      */
     public static ISession getSession() {
-        return new Configure();
+        Configure configure= new Configure();
+        configure.isAutoClose=false;
+        return  configure;
+    }
+
+    /**
+     * Gets a session for one operation, after execution the session will be closed.
+     * @return object {@link ISession}
+     *
+     * <pre>
+     * {@code
+     * Configure.getSessionAutoClose().query(MyTable.class).distinctByAsync("name").thenAcceptAsync(list -> {
+     *     binding.textviewFirst.setText(String.valueOf(list.size()));
+     * });
+     *
+     * }
+     * </pre>
+     */
+    public static ISession getSessionAutoClose() {
+        Configure configure= new Configure();
+        configure.isAutoClose=true;
+        return  configure;
+    }
+
+    void closeAuto(){
+        if(isAutoClose){
+            try {
+                close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private static SQLiteDatabase GetSqLiteDatabaseForReadable() {
@@ -204,7 +232,12 @@ public class Configure implements ISession {
 
     @Override
     public String getPath() {
-        return sqLiteDatabaseForWritable.getPath();
+        try {
+            return sqLiteDatabaseForWritable.getPath();
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
@@ -218,18 +251,19 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T, R> R count(@NonNull Class<T> aClass) {
+    public <T, r> r count(@NonNull Class<T> aClass) {
         return count(aClass, null);
     }
 
     @Override
-    public <T, R> R count(@NonNull Class<T> aClass, String where, Object... parameters) {
+    public <T, r> r count(@NonNull Class<T> aClass, String where, Object... parameters) {
+
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData, "count", "aClass");
         where = whereBuilderRaw(where, metaData);
 
         String sql = MessageFormat.format("SELECT COUNT(*) FROM {0} {1};", metaData.tableName, where);
-        return (R) executeScalar(sql, parameters);
+        return (r) executeScalar(sql, parameters);
     }
 
     @Override
@@ -239,6 +273,7 @@ public class Configure implements ISession {
 
     @Override
     public <T> boolean any(@NonNull Class<T> aClass, String where, Object... parameters) {
+
         CacheMetaData<T> metaData = getCacheMetaData(aClass);
         checkingUsageType(metaData, "any", "aClass");
         where = whereBuilderRaw(where, metaData);
@@ -249,52 +284,57 @@ public class Configure implements ISession {
 
     @Override
     public <T> int update(@NonNull T item) {
-        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
-        checkingUsageType(metaData, "update", "item");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
-        }
-        if (metaData.isPersistent) {
-            if (!((Persistent) item).isPersistent) {
-                throw new RuntimeException("You are trying to update a non-persistent object that is not in the database.");
-            }
-        }
-        ContentValues contentValues = getInnerContentValues(item, metaData);
-        int res;
         try {
-            if (metaData.isIAction) {
-                ((IEventOrm) item).beforeUpdate();
+            CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+            checkingUsageType(metaData, "update", "item");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
             }
-            Object key = metaData.keyColumn.field.get(item);
-            String where = whereBuilder(metaData.keyColumn.columnName + " = ?", metaData);
-            String[] param = new String[]{String.valueOf(key)};
-            res = sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
-            if (Configure.IsWriteLog) {
-                Logger.I(Utils.getStringUpdate(metaData.tableName, contentValues, where + " params: " + String.join(" - ", param)));
-            }
-
             if (metaData.isPersistent) {
-                ((Persistent) item).isPersistent = true;
+                if (!((Persistent) item).isPersistent) {
+                    throw new RuntimeException("You are trying to update a non-persistent object that is not in the database.");
+                }
             }
-            if (metaData.isIAction) {
-                ((IEventOrm) item).afterUpdate();
+            ContentValues contentValues = getInnerContentValues(item, metaData);
+            int res;
+            try {
+                if (metaData.isIAction) {
+                    ((IEventOrm) item).beforeUpdate();
+                }
+                Object key = metaData.keyColumn.field.get(item);
+                String where = whereBuilder(metaData.keyColumn.columnName + " = ?", metaData);
+                String[] param = new String[]{String.valueOf(key)};
+                res = sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
+                if (Configure.IsWriteLog) {
+                    Logger.I(Utils.getStringUpdate(metaData.tableName, contentValues, where + " params: " + String.join(" - ", param)));
+                }
+
+                if (metaData.isPersistent) {
+                    ((Persistent) item).isPersistent = true;
+                }
+                if (metaData.isIAction) {
+                    ((IEventOrm) item).afterUpdate();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return res;
+        }finally {
+            closeAuto();
         }
-        return res;
+
 
     }
 
     String[] concat(String[] t1, String[] t2) {
         String[] res = new String[t1.length + t2.length];
         var index = 0;
-        for (int i = 0; i < t1.length; i++) {
-            res[index] = t1[i];
+        for (String s : t1) {
+            res[index] = s;
             index++;
         }
-        for (int i = 0; i < t2.length; i++) {
-            res[index] = t2[i];
+        for (String s : t2) {
+            res[index] = s;
             index++;
         }
         return res;
@@ -302,147 +342,165 @@ public class Configure implements ISession {
 
     @Override
     public <T> int update(@NonNull T item, String appendWhere, Object... parameters) {
-        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
-        checkingUsageType(metaData, "update", "item");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
-        }
-        if (metaData.isPersistent) {
-            if (!((Persistent) item).isPersistent) {
-                throw new RuntimeException("You are trying to update a non-persistent object that is not in the database.");
-            }
-        }
-        ContentValues contentValues = getInnerContentValues(item, metaData);
-        int res;
         try {
-            if (metaData.isIAction) {
-                ((IEventOrm) item).beforeUpdate();
+            CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+            checkingUsageType(metaData, "update", "item");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
             }
-            Object key = metaData.keyColumn.field.get(item);
-            String where = whereBuilder(metaData.keyColumn.columnName + " = ?", metaData);
-            if (appendWhere.isEmpty() == false) {
-                where = where + " and " + appendWhere;
-            }
-            String[] param = new String[]{String.valueOf(key)};
-            if (parameters.length > 0) {
-                String[] append = parametrize(parameters);
-                param = concat(param, append);
-
-
-            }
-            res = sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
-            if (Configure.IsWriteLog) {
-                Logger.I(Utils.getStringUpdate(metaData.tableName, contentValues, where + " params: " + String.join(" - ", param)));
-            }
-
             if (metaData.isPersistent) {
-                ((Persistent) item).isPersistent = true;
+                if (!((Persistent) item).isPersistent) {
+                    throw new RuntimeException("You are trying to update a non-persistent object that is not in the database.");
+                }
             }
-            if (metaData.isIAction) {
-                ((IEventOrm) item).afterUpdate();
+            ContentValues contentValues = getInnerContentValues(item, metaData);
+            int res;
+            try {
+                if (metaData.isIAction) {
+                    ((IEventOrm) item).beforeUpdate();
+                }
+                Object key = metaData.keyColumn.field.get(item);
+                String where = whereBuilder(metaData.keyColumn.columnName + " = ?", metaData);
+                if (!appendWhere.isEmpty()) {
+                    where = where + " and " + appendWhere;
+                }
+                String[] param = new String[]{String.valueOf(key)};
+                if (parameters.length > 0) {
+                    String[] append = parametrize(parameters);
+                    param = concat(param, append);
+
+
+                }
+                res = sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, param);
+                if (Configure.IsWriteLog) {
+                    Logger.I(Utils.getStringUpdate(metaData.tableName, contentValues, where + " params: " + String.join(" - ", param)));
+                }
+
+                if (metaData.isPersistent) {
+                    ((Persistent) item).isPersistent = true;
+                }
+                if (metaData.isIAction) {
+                    ((IEventOrm) item).afterUpdate();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return res;
+        }finally {
+            closeAuto();
         }
-        return res;
+
     }
 
     @Override
     public <T> void insert(@NonNull T item) {
-        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
-        checkingUsageType(metaData, "insert", "item");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
-        }
-        if (metaData.isPersistent) {
-            var per = ((Persistent) item);
-            if (per.isPersistent) {
-                throw new RuntimeException("You are trying to insert an object into the database that was previously retrieved from the database, which is not very logical.");
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+            checkingUsageType(metaData, "insert", "item");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
             }
+            if (metaData.isPersistent) {
+                var per = ((Persistent) item);
+                if (per.isPersistent) {
+                    throw new RuntimeException("You are trying to insert an object into the database that was previously retrieved from the database, which is not very logical.");
+                }
+            }
+
+            if (metaData.isIAction) {
+                ((IEventOrm) item).beforeInsert();
+            }
+            ContentValues contentValues = getInnerContentValues(item, metaData);
+            boolean runTransaction = false;
+            if (!sqLiteDatabaseForWritable.inTransaction() && !metaData.keyColumn.isAssigned) {
+                beginTransaction();
+                runTransaction = true;
+            }
+            try {
+                sqLiteDatabaseForWritable.insertOrThrow(metaData.tableName, null, contentValues);
+                Logger.I(Utils.getStringInsert(metaData.tableName, contentValues));
+                if (!metaData.keyColumn.isAssigned) {
+                    var id = executeScalar("SELECT last_insert_rowid();");
+                    metaData.keyColumn.field.set(item, id);
+                }
+                if (runTransaction) {
+                    commitTransaction();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                if (runTransaction) {
+                    endTransaction();
+                }
+            }
+            if (metaData.isPersistent) {
+                ((Persistent) item).isPersistent = true;
+            }
+            if (metaData.isIAction) {
+                ((IEventOrm) item).afterInsert();
+            }
+        }finally {
+            closeAuto();
         }
 
-        if (metaData.isIAction) {
-            ((IEventOrm) item).beforeInsert();
-        }
-        ContentValues contentValues = getInnerContentValues(item, metaData);
-        boolean runTransaction = false;
-        if (!sqLiteDatabaseForWritable.inTransaction() && !metaData.keyColumn.isAssigned) {
-            beginTransaction();
-            runTransaction = true;
-        }
-        try {
-            sqLiteDatabaseForWritable.insertOrThrow(metaData.tableName, null, contentValues);
-            Logger.I(Utils.getStringInsert(metaData.tableName, contentValues));
-            if (!metaData.keyColumn.isAssigned) {
-                var id = executeScalar("SELECT last_insert_rowid();");
-                metaData.keyColumn.field.set(item, id);
-            }
-            if (runTransaction) {
-                commitTransaction();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (runTransaction) {
-                endTransaction();
-            }
-        }
-        if (metaData.isPersistent) {
-            ((Persistent) item).isPersistent = true;
-        }
-        if (metaData.isIAction) {
-            ((IEventOrm) item).afterInsert();
-        }
 
     }
 
     @Override
     public <T> int delete(@NonNull T item) {
-
-        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
-        checkingUsageType(metaData, "delete", "item");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
-        }
-        if (metaData.isPersistent) {
-            var per = ((Persistent) item);
-            if (!per.isPersistent) {
-                throw new RuntimeException("You cannot delete the object because it was not retrieved from the database.");
-            }
-        }
-        Object key;
         try {
-            Field field = metaData.keyColumn.field;
-            field.setAccessible(true);
-            key = checkFieldValue(field, item);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        if (metaData.isIAction) {
-            ((IEventOrm) item).beforeDelete();
-        }
-        int res = sqLiteDatabaseForWritable.delete(metaData.tableName, metaData.tableName + "." + metaData.keyColumn.columnName + "=?", new String[]{key.toString()});
-        if (res != 0) {
-            if (metaData.isIAction) {
-                ((IEventOrm) item).afterDelete();
+            CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+            checkingUsageType(metaData, "delete", "item");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
             }
+            if (metaData.isPersistent) {
+                var per = ((Persistent) item);
+                if (!per.isPersistent) {
+                    throw new RuntimeException("You cannot delete the object because it was not retrieved from the database.");
+                }
+            }
+            Object key;
+            try {
+                Field field = metaData.keyColumn.field;
+                field.setAccessible(true);
+                key = checkFieldValue(field, item);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (metaData.isIAction) {
+                ((IEventOrm) item).beforeDelete();
+            }
+            int res = sqLiteDatabaseForWritable.delete(metaData.tableName, metaData.tableName + "." + metaData.keyColumn.columnName + "=?", new String[]{key.toString()});
+            if (res != 0) {
+                if (metaData.isIAction) {
+                    ((IEventOrm) item).afterDelete();
+                }
+            }
+            return res;
+        }finally {
+            closeAuto();
         }
-        return res;
+
     }
 
     @Override
     public <T> int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... parameters) {
-
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "updateRows", "aClass");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "updateRows", "aClass");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+            }
+            where = whereBuilder(where, metaData);
+            ContentValues contentValues = getInnerContentValuesForUpdate(metaData, columnValues);
+            Logger.I("UPDATEALL WHERE: " + where);
+            Logger.I(Utils.getStringUpdate(metaData.tableName, contentValues, where));
+            return sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, parametrize(parameters));
+        }finally {
+            closeAuto();
         }
-        where = whereBuilder(where, metaData);
-        ContentValues contentValues = getInnerContentValuesForUpdate(metaData, columnValues);
-        Logger.I("UPDATEALL WHERE: " + where);
-        Logger.I(Utils.getStringUpdate(metaData.tableName, contentValues, where));
-        return sqLiteDatabaseForWritable.update(metaData.tableName, contentValues, where, parametrize(parameters));
+
 
     }
 
@@ -453,80 +511,93 @@ public class Configure implements ISession {
 
     @Override
     public <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... parameters) {
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "toList", "aClass");
+            where = whereBuilder(where, metaData);
 
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "toList", "aClass");
-        where = whereBuilder(where, metaData);
 
+            String sql = SelectBuilder.getSql(metaData, where);
+            List<T> list;
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+                list = new ArrayList<>();
+                if (cursor.moveToFirst()) {
+                    do {
+                        T instance = aClass.newInstance();
+                        if (metaData.isPersistent) {
+                            ((Persistent) instance).isPersistent = true;
+                        }
+                        builderInstance(metaData, cursor, instance);
 
-        String sql = SelectBuilder.getSql(metaData, where);
-        List<T> list;
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-            list = new ArrayList<>();
-            if (cursor.moveToFirst()) {
-                do {
-                    T instance = aClass.newInstance();
-                    if (metaData.isPersistent) {
-                        ((Persistent) instance).isPersistent = true;
-                    }
-                    builderInstance(metaData, cursor, instance);
-
-                    list.add(instance);
-                } while (cursor.moveToNext());
+                        list.add(instance);
+                    } while (cursor.moveToNext());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return list;
+        }finally {
+            closeAuto();
         }
-        return list;
+
 
     }
 
 
     @Override
     public <T> List<T> getListFree(@NonNull Class<T> aClass, String sql, Object... parameters) {
-        CacheMetaData<?> metaData = CacheDictionary.getCacheMetaData(aClass);
-        Logger.I(sql);
-        List<T> list = new ArrayList<>();
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
+        try {
+            CacheMetaData<?> metaData = CacheDictionary.getCacheMetaData(aClass);
+            Logger.I(sql);
+            List<T> list = new ArrayList<>();
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
 
-            if (cursor.moveToFirst()) {
-                do {
-                    T instance = aClass.newInstance();
-                    builderInstance(metaData, cursor, instance);
-                    list.add(instance);
-                } while (cursor.moveToNext());
+                if (cursor.moveToFirst()) {
+                    do {
+                        T instance = aClass.newInstance();
+                        builderInstance(metaData, cursor, instance);
+                        list.add(instance);
+                    } while (cursor.moveToNext());
+                }
+                return list;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            return list;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        }finally {
+            closeAuto();
         }
+
     }
 
 
     @Override
     public <T> T firstOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) {
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "firstOrDefault", "aClass");
+            where = whereBuilder(where, metaData);
+            String sql = SelectBuilder.getSqlLimit(metaData, where, 1);
 
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "firstOrDefault", "aClass");
-        where = whereBuilder(where, metaData);
-        String sql = SelectBuilder.getSqlLimit(metaData, where, 1);
 
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+                if (cursor.moveToFirst()) {
+                    T instance = aClass.newInstance();
+                    if (metaData.isPersistent) {
+                        ((Persistent) instance).isPersistent = true;
+                    }
+                    builderInstance(metaData, cursor, instance);
+                    return instance;
 
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-            if (cursor.moveToFirst()) {
-                T instance = aClass.newInstance();
-                if (metaData.isPersistent) {
-                    ((Persistent) instance).isPersistent = true;
                 }
-                builderInstance(metaData, cursor, instance);
-                return instance;
-
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+
+            return null;
+        }finally {
+            closeAuto();
         }
 
-        return null;
     }
 
     @Override
@@ -540,88 +611,132 @@ public class Configure implements ISession {
 
     @Override
     public <T> T single(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception {
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "single", "aClass");
+            where = whereBuilder(where, metaData);
+            String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
+            Logger.I(sql);
+            Object[] resultArray = new Object[]{null, null};
+            int index = 0;
 
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+                if (cursor.moveToFirst()) {
+                    do {
+                        T instance = aClass.newInstance();
+                        if (metaData.isPersistent) {
+                            ((Persistent) instance).isPersistent = true;
+                        }
+                        builderInstance(metaData, cursor, instance);
+                        resultArray[index] = instance;
+                        index++;
+                    } while (cursor.moveToNext());
 
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "single", "aClass");
-        where = whereBuilder(where, metaData);
-        String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
-        Logger.I(sql);
-        Object[] resultArray = new Object[]{null, null};
-        int index = 0;
-
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-            if (cursor.moveToFirst()) {
-                do {
-                    T instance = aClass.newInstance();
-                    if (metaData.isPersistent) {
-                        ((Persistent) instance).isPersistent = true;
-                    }
-                    builderInstance(metaData, cursor, instance);
-                    resultArray[index] = instance;
-                    index++;
-                } while (cursor.moveToNext());
-
+                }
             }
+            if (resultArray[0] == null && resultArray[1] == null) {
+                throw new Exception("!!!No object was found matching the selection criteria.");
+            }
+            if (resultArray[1] == null) {
+                return (T) resultArray[0];
+            } else {
+                throw new Exception("!!!There is more than one object by condition");
+            }
+        }finally {
+            closeAuto();
         }
-        if (resultArray[0] == null && resultArray[1] == null) {
-            throw new Exception("!!!No object was found matching the selection criteria.");
-        }
-        if (resultArray[1] == null) {
-            return (T) resultArray[0];
-        } else {
-            throw new Exception("!!!There is more than one object by condition");
-        }
+
+
 
     }
 
 
     @Override
     public <T> T singleOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) {
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "singleOrDefault", "aClass");
+            where = whereBuilder(where, metaData);
+            String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
+            Logger.I(sql);
+            Object[] resultArray = new Object[]{null, null};
+            int index = 0;
 
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "singleOrDefault", "aClass");
-        where = whereBuilder(where, metaData);
-        String sql = SelectBuilder.getSqlLimit(metaData, where, 2);
-        Logger.I(sql);
-        Object[] resultArray = new Object[]{null, null};
-        int index = 0;
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+                if (cursor.moveToFirst()) {
+                    do {
+                        T instance = aClass.newInstance();
+                        if (metaData.isPersistent) {
+                            ((Persistent) instance).isPersistent = true;
+                        }
+                        builderInstance(metaData, cursor, instance);
+                        resultArray[index] = instance;
+                        index++;
+                    } while (cursor.moveToNext());
 
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-            if (cursor.moveToFirst()) {
-                do {
-                    T instance = aClass.newInstance();
-                    if (metaData.isPersistent) {
-                        ((Persistent) instance).isPersistent = true;
-                    }
-                    builderInstance(metaData, cursor, instance);
-                    resultArray[index] = instance;
-                    index++;
-                } while (cursor.moveToNext());
-
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            if (resultArray[1] == null) {
+                return (T) resultArray[0];
+            } else {
+                return null;
+            }
+        }finally {
+            closeAuto();
         }
-        if (resultArray[1] == null) {
-            return (T) resultArray[0];
-        } else {
-            return null;
-        }
+
 
     }
 
 
     @Override
     public <T, D> List<D> getListSelect(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) {
+        try {
+            List<D> list;
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "getListSelect", "aClass");
+            where = whereBuilder(where, metaData);
+            if(!where.isEmpty()){
+                where=" WHERE "+where;
+            }
 
-        List<D> list;
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "getListSelect", "aClass");
-        where = whereBuilder(where, metaData);
-        String[] sdd = new String[]{Utils.clearStringTrimRaw(columnName)};
-        String[] str = parametrize(parameters);
 
+            ItemField itemField = getItemField(columnName, metaData);
+
+            String sql="SELECT "+columnName+" FROM  "+metaData.tableName+" "+where+";";
+            try (Cursor cursor = execSQLRawInner(sql,parameters)) {
+                list = new ArrayList<>(cursor.getCount());
+                Logger.printSql(cursor);
+
+                int indexColumn=-1;
+                if (cursor.moveToFirst()) {
+                    do {
+
+                        if(indexColumn==-1){
+                            indexColumn=cursor.getColumnIndex(columnName);
+                            if(indexColumn==-1){
+                                throw new RuntimeException("Column with name \""+columnName+"\" was not found in the cursor output");
+                            }
+                        }
+
+                        Object o = extractedSwitchSelect(cursor, itemField, itemField.field, indexColumn);
+                        D d = (D) o;
+                        list.add(d);
+                    } while (cursor.moveToNext());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return list;
+        }finally {
+            closeAuto();
+        }
+
+    }
+
+    private static <T> @NonNull ItemField getItemField(@NonNull String columnName, CacheMetaData<T> metaData) {
         ItemField itemField = null;
         if (metaData.keyColumn.columnNameRaw.equals(columnName)) {
             itemField = metaData.keyColumn;
@@ -636,212 +751,198 @@ public class Configure implements ISession {
         if (itemField == null) {
             throw new RuntimeException("Column name: " + columnName + " is not found in the table: " + metaData.tableName);
         }
-
-        try (Cursor cursor = sqLiteDatabaseForReadable.query(metaData.tableName, sdd, where, str, null, null, null, null)) {
-            list = new ArrayList<>(cursor.getCount());
-            Logger.printSql(cursor);
-
-            if (cursor.moveToFirst()) {
-                do {
-
-                    Object o = extractedSwitchSelect(cursor, itemField, itemField.field, 1);
-                    D d = (D) o;
-                    list.add(d);
-
-//                    int columnType = cursor.getType(0);
-//                    switch (columnType) {
-//                        case Cursor.FIELD_TYPE_NULL: {
-//                            list.add(null);
-//                            continue;
-//                        }
-//                        case Cursor.FIELD_TYPE_STRING: {
-//                            list.add((D) cursor.getString(0));
-//                            continue;
-//                        }
-//                        case Cursor.FIELD_TYPE_INTEGER: {
-//                            list.add((D) (Object) cursor.getInt(0));
-//                            continue;
-//                        }
-//                        case Cursor.FIELD_TYPE_FLOAT: {
-//                            list.add((D) (Object) cursor.getFloat(0));
-//                            continue;
-//                        }
-//                        case Cursor.FIELD_TYPE_BLOB: {
-//                            list.add((D) cursor.getBlob(0));
-//                            continue;
-//                        }
-//                        default: {
-//                            throw new RuntimeException("не могу определить тип поля:" + columnType);
-//                        }
-//                    }
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-
-        return list;
+        return itemField;
     }
 
     @Override
     public <T> List<T> getListSelect(@NonNull String sql, Object... parameters) {
-        List<T> list;
-        Logger.I(sql);
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-            list = new ArrayList<>(cursor.getCount());
-            if (cursor.moveToFirst()) {
-                do {
-                    int columnType = cursor.getType(0);
-                    switch (columnType) {
-                        case Cursor.FIELD_TYPE_NULL: {
-                            list.add(null);
-                            continue;
+        try {
+            List<T> list;
+            Logger.I(sql);
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+                list = new ArrayList<>(cursor.getCount());
+                if (cursor.moveToFirst()) {
+                    do {
+                        int columnType = cursor.getType(0);
+                        switch (columnType) {
+                            case Cursor.FIELD_TYPE_NULL: {
+                                list.add(null);
+                                continue;
+                            }
+                            case Cursor.FIELD_TYPE_STRING: {
+                                list.add((T) cursor.getString(0));
+                                continue;
+                            }
+                            case Cursor.FIELD_TYPE_INTEGER: {
+                                list.add((T) (Object) cursor.getInt(0));
+                                continue;
+                            }
+                            case Cursor.FIELD_TYPE_FLOAT: {
+                                list.add((T) (Object) cursor.getFloat(0));
+                                continue;
+                            }
+                            case Cursor.FIELD_TYPE_BLOB: {
+                                list.add((T) cursor.getBlob(0));
+                                continue;
+                            }
+                            default: {
+                                throw new RuntimeException("не могу определить тип поля:" + columnType);
+                            }
                         }
-                        case Cursor.FIELD_TYPE_STRING: {
-                            list.add((T) cursor.getString(0));
-                            continue;
-                        }
-                        case Cursor.FIELD_TYPE_INTEGER: {
-                            list.add((T) (Object) cursor.getInt(0));
-                            continue;
-                        }
-                        case Cursor.FIELD_TYPE_FLOAT: {
-                            list.add((T) (Object) cursor.getFloat(0));
-                            continue;
-                        }
-                        case Cursor.FIELD_TYPE_BLOB: {
-                            list.add((T) cursor.getBlob(0));
-                            continue;
-                        }
-                        default: {
-                            throw new RuntimeException("не могу определить тип поля:" + columnType);
-                        }
-                    }
-                } while (cursor.moveToNext());
+                    } while (cursor.moveToNext());
+                }
             }
+            return list;
+        }finally {
+            closeAuto();
         }
-        return list;
+
     }
 
 
     @Override
     public <T> Map<Object, List<T>> groupBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) {
-        if (columnName.isEmpty()) {
-            throw new ArithmeticException("Parameter columnName, empty or is null,");
-        }
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "groupBy", "aClass");
-        boolean isthis = false;
-        for (int i = 0; i < metaData.listColumn.size(); i++) {
-            ItemField field = metaData.listColumn.get(i);
-            if (field.columnNameRaw.equals(columnName)) {
-                isthis = true;
+        try {
+            if (columnName.isEmpty()) {
+                throw new ArithmeticException("Parameter columnName, empty or is null,");
             }
-        }
-        if (!isthis) {
-            throw new RuntimeException("The column with the name " + columnName + " was not found in the table " + metaData.tableName + ". " +
-                    "Perhaps you meant the name of the primary key, which is prohibited.");
-        }
-        where = whereBuilder(where, metaData);
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "groupBy", "aClass");
+            boolean isthis = false;
+            for (int i = 0; i < metaData.listColumn.size(); i++) {
+                ItemField field = metaData.listColumn.get(i);
+                if (field.columnNameRaw.equals(columnName)) {
+                    isthis = true;
+                }
+            }
+            if (!isthis) {
+                throw new RuntimeException("The column with the name " + columnName + " was not found in the table " + metaData.tableName + ". " +
+                        "Perhaps you meant the name of the primary key, which is prohibited.");
+            }
+            where = whereBuilder(where, metaData);
 
 
-        String sql = SelectBuilder.getSql(metaData, where);
-        Map<Object, List<T>> map;
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-            map = new HashMap<>();
-            int colimnIndex = -1;
-            if (cursor.moveToFirst()) {
-                do {
-                    if (colimnIndex == -1) {
-                        colimnIndex = cursor.getColumnIndex(columnName);
-                    }
-                    Object key = Utils.getObjectFromCursor(cursor, colimnIndex);
-
-                    T instance = aClass.newInstance();
-                    if (metaData.isPersistent) {
-                        ((Persistent) instance).isPersistent = true;
-                    }
-                    builderInstance(metaData, cursor, instance);
-                    if (map.containsKey(key)) {
-                        var maplist = map.get(key);
-                        if (maplist == null) {
-                            throw new RuntimeException("list is null");
+            String sql = SelectBuilder.getSql(metaData, where);
+            Map<Object, List<T>> map;
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+                map = new HashMap<>();
+                int colimnIndex = -1;
+                if (cursor.moveToFirst()) {
+                    do {
+                        if (colimnIndex == -1) {
+                            colimnIndex = cursor.getColumnIndex(columnName);
                         }
-                        maplist.add(instance);
-                    } else {
-                        List<T> tList = new ArrayList<>();
-                        tList.add(instance);
-                        map.put(key, tList);
-                    }
-                } while (cursor.moveToNext());
+                        Object key = Utils.getObjectFromCursor(cursor, colimnIndex);
+
+                        T instance = aClass.newInstance();
+                        if (metaData.isPersistent) {
+                            ((Persistent) instance).isPersistent = true;
+                        }
+                        builderInstance(metaData, cursor, instance);
+                        if (map.containsKey(key)) {
+                            var maplist = map.get(key);
+                            if (maplist == null) {
+                                throw new RuntimeException("list is null");
+                            }
+                            maplist.add(instance);
+                        } else {
+                            List<T> tList = new ArrayList<>();
+                            tList.add(instance);
+                            map.put(key, tList);
+                        }
+                    } while (cursor.moveToNext());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return map;
+        }finally {
+            closeAuto();
         }
-        return map;
+
 
     }
 
     @Override
     public <T> List<Object> distinctBy(@NonNull Class<T> aClass, @org.jspecify.annotations.NonNull String columnName, String where, Object... parameters) {
-        if (columnName.isEmpty()) {
-            throw new ArithmeticException("Parameter columnName, empty or is null,");
-        }
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "distinctBy", "aClass");
-        boolean isthis = false;
-        for (int i = 0; i < metaData.listColumn.size(); i++) {
-            ItemField field = metaData.listColumn.get(i);
-            if (field.columnNameRaw.equals(columnName)) {
-                isthis = true;
+        try {
+            if (columnName.isEmpty()) {
+                throw new ArithmeticException("Parameter columnName, empty or is null,");
             }
-        }
-        if (!isthis) {
-            throw new RuntimeException("The column with the name " + columnName + " was not found in the table " + metaData.tableName + ". " +
-                    "Perhaps you meant the name of the primary key, which is prohibited.");
-        }
-        where = whereBuilder(where, metaData);
-
-
-        String sql = SelectBuilder.getSqlDistinct(columnName, metaData, where);
-
-        List<Object> objectList;
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-            objectList = new ArrayList<>();
-            if (cursor.moveToFirst()) {
-                do {
-                    Object key = Utils.getObjectFromCursor(cursor, 0);
-                    objectList.add(key);
-                } while (cursor.moveToNext());
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "distinctBy", "aClass");
+            boolean isthis = false;
+            for (int i = 0; i < metaData.listColumn.size(); i++) {
+                ItemField field = metaData.listColumn.get(i);
+                if (field.columnNameRaw.equals(columnName)) {
+                    isthis = true;
+                }
             }
+            if (!isthis) {
+                throw new RuntimeException("The column with the name " + columnName + " was not found in the table " + metaData.tableName + ". " +
+                        "Perhaps you meant the name of the primary key, which is prohibited.");
+            }
+            where = whereBuilder(where, metaData);
+
+
+            String sql = SelectBuilder.getSqlDistinct(columnName, metaData, where);
+
+            List<Object> objectList;
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+                objectList = new ArrayList<>();
+                if (cursor.moveToFirst()) {
+                    do {
+                        Object key = Utils.getObjectFromCursor(cursor, 0);
+                        objectList.add(key);
+                    } while (cursor.moveToNext());
+                }
+            }
+            return objectList;
+        }finally {
+            closeAuto();
         }
-        return objectList;
+
 
     }
 
     @Override
     public boolean IsAlive() {
-        return sqLiteDatabaseForReadable.isOpen();
+        try {
+            return sqLiteDatabaseForReadable.isOpen();
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
     public <T> ContentValues getContentValues(@NonNull T item) {
-        CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
-        checkingUsageType(metaData, "getContentValues", "item");
-        return getInnerContentValues(item, metaData);
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
+            checkingUsageType(metaData, "getContentValues", "item");
+            return getInnerContentValues(item, metaData);
+        }finally {
+            closeAuto();
+        }
+
 
     }
 
     @Override
     public <T> ContentValues getContentValuesForUpdate(@NonNull Class<T> aClass, PairColumnValue columnValues) {
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "getContentValuesForUpdate", "aClass");
-        return getInnerContentValuesForUpdate(metaData, columnValues);
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "getContentValuesForUpdate", "aClass");
+            return getInnerContentValuesForUpdate(metaData, columnValues);
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
     public <T> int save(@NonNull T item) {
+
         CacheMetaData<T> metaData = getCacheMetaData(item.getClass());
         checkingUsageType(metaData, "save", "item");
         if (!metaData.isPersistent) {
@@ -857,62 +958,88 @@ public class Configure implements ISession {
 
     @Override
     public <T> T objectFiller(Class<T> aClass, Cursor cursor) throws Exception {
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        T instance = aClass.newInstance();
-        builderInstance(metaData, cursor, instance);
-        return instance;
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            T instance = aClass.newInstance();
+            builderInstance(metaData, cursor, instance);
+            return instance;
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
     public <T> void objectFiller(Cursor cursor, T instance) throws Exception {
-        CacheMetaData<T> metaData = getCacheMetaData(instance.getClass());
-        builderInstance(metaData, cursor, instance);
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(instance.getClass());
+            builderInstance(metaData, cursor, instance);
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
     public <T> IQueryable<T> query(Class<T> aClass) {
-        return new ScopedValue<T>((ISession) this, aClass);
+        return new ScopedValue<T>(this, aClass);
     }
 
     @Override
-    public <T> void iterator(@NonNull Class<T> aClass, @NonNull IAction<T> action, String where, Object... parameters) {
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "toList", "aClass");
-        where = whereBuilder(where, metaData);
-        String sql = SelectBuilder.getSql(metaData, where);
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
+    public <T> void iterator(@NonNull Class<T> aClass, @NonNull ITask<T> action, String where, Object... parameters) {
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "toList", "aClass");
+            where = whereBuilder(where, metaData);
+            String sql = SelectBuilder.getSql(metaData, where);
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
 
-            if (cursor.moveToFirst()) {
-                do {
-                    T instance = aClass.newInstance();
-                    if (metaData.isPersistent) {
-                        ((Persistent) instance).isPersistent = true;
-                    }
-                    action.invoke(instance);
-                    builderInstance(metaData, cursor, instance);
-                } while (cursor.moveToNext());
+                if (cursor.moveToFirst()) {
+                    do {
+                        T instance = aClass.newInstance();
+                        if (metaData.isPersistent) {
+                            ((Persistent) instance).isPersistent = true;
+                        }
+                        action.invoke(instance);
+                        builderInstance(metaData, cursor, instance);
+                    } while (cursor.moveToNext());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        }finally {
+            closeAuto();
         }
+
     }
 
     @Override
-    public <T> void iteratorFree(@NonNull Class<T> aClass, @NonNull String sql, IAction<T> action, Object... parameters) {
+    public <T> void iteratorFree(@NonNull Class<T> aClass, @NonNull String sql, ITask<T> action, Object... parameters) {
+        try {
+            CacheMetaData<?> metaData = CacheDictionary.getCacheMetaData(aClass);
+            Logger.I(sql);
+            try (Cursor cursor = execSQLRawInner(sql, parameters)) {
+
+                if (cursor.moveToFirst()) {
+                    do {
+                        T instance = aClass.newInstance();
+                        builderInstance(metaData, cursor, instance);
+                        action.invoke(instance);
+                    } while (cursor.moveToNext());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }finally {
+            closeAuto();
+        }
+
+    }
+
+    @Override
+    public <T> T getById(@NonNull Class<T> aClass, @NonNull Object primaryKey) {
         CacheMetaData<?> metaData = CacheDictionary.getCacheMetaData(aClass);
-        Logger.I(sql);
-        try (Cursor cursor = execSQLRaw(sql, parameters)) {
-
-            if (cursor.moveToFirst()) {
-                do {
-                    T instance = aClass.newInstance();
-                    builderInstance(metaData, cursor, instance);
-                    action.invoke(instance);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return singleOrDefault(aClass,metaData.keyColumn.columnName+" = ?",primaryKey);
     }
 
     <T> ContentValues getInnerContentValuesForUpdate(CacheMetaData<T> data, PairColumnValue columnValues) {
@@ -944,61 +1071,79 @@ public class Configure implements ISession {
 
     @Override
     public void executeSQL(@NonNull String sql, Object... parameters) {
+        try {
+            sqLiteDatabaseForWritable.execSQL(sql, parameters);
+            Logger.I(sql);
+        }finally {
+            closeAuto();
+        }
 
-        sqLiteDatabaseForWritable.execSQL(sql, parameters);
-        Logger.I(sql);
+    }
+
+    @Override
+    public Cursor execSQLRaw(@NonNull String sql, Object... objects) {
+        try {
+            return execSQLRawInner(sql,objects);
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
     public <T> void insertBulk(@NonNull List<T> tList) {
-
-        if (tList.isEmpty()) {
-            throw new ArithmeticException("The list is Empty");
-        }
-        tList.forEach(t -> {
-            if (t == null) {
-                throw new ArithmeticException("The list must not contain empty objects as null");
+        try {
+            if (tList.isEmpty()) {
+                throw new ArithmeticException("The list is Empty");
             }
-
-        });
-        var metaData = getCacheMetaData(tList.get(0).getClass());
-
-        checkingUsageType(metaData, "insetBulk", "item of lis");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
-        }
-        tList.forEach(t -> {
-            if (metaData.isPersistent) {
-                if (((Persistent) t).isPersistent) {
-                    throw new RuntimeException("Your list contains a persistent object that was previously retrieved from the database.");
+            tList.forEach(t -> {
+                if (t == null) {
+                    throw new ArithmeticException("The list must not contain empty objects as null");
                 }
-            }
 
-        });
+            });
+            var metaData = getCacheMetaData(tList.get(0).getClass());
 
-        List<List<T>> sd = partition(tList);
-        for (List<T> ts : sd) {
-            InnerInsertBulk<T> s = new InnerInsertBulk<>(metaData);
-            for (T t : ts) {
-                s.add(t);
+            checkingUsageType(metaData, "insetBulk", "item of lis");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
             }
-            String sql = s.getSql();
-            if (sql != null) {
-                try {
-                    var param = s.getParamsObjectList().toArray();
-                    sqLiteDatabaseForWritable.execSQL(sql, param);
-                    if (Configure.IsWriteLog) {
-                        Logger.I(sql + System.lineSeparator() + " params:" + Arrays.toString(param));
+            tList.forEach(t -> {
+                if (metaData.isPersistent) {
+                    if (((Persistent) t).isPersistent) {
+                        throw new RuntimeException("Your list contains a persistent object that was previously retrieved from the database.");
                     }
+                }
 
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+            });
+
+            List<List<T>> sd = partition(tList);
+            for (List<T> ts : sd) {
+                InnerInsertBulk<T> s = new InnerInsertBulk<>(metaData);
+                for (T t : ts) {
+                    s.add(t);
+                }
+                String sql = s.getSql();
+                if (sql != null) {
+                    try {
+                        var param = s.getParamsObjectList().toArray();
+                        sqLiteDatabaseForWritable.execSQL(sql, param);
+                        if (Configure.IsWriteLog) {
+                            Logger.I(sql + System.lineSeparator() + " params:" + Arrays.toString(param));
+                        }
+
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
+            if (metaData.isPersistent) {
+                tList.forEach(t -> ((Persistent) t).isPersistent = true);
+            }
+        }finally {
+            closeAuto();
         }
-        if (metaData.isPersistent) {
-            tList.forEach(t -> ((Persistent) t).isPersistent = true);
-        }
+
     }
 
     @SafeVarargs
@@ -1008,49 +1153,64 @@ public class Configure implements ISession {
         insertBulk(list);
     }
 
-    @Override
-    public Cursor execSQLRaw(@NonNull String sql, Object... parameters) {
+
+     Cursor execSQLRawInner(@NonNull String sql, Object... parameters) {
         try {
             String[] params = parametrize(parameters);
             return sqLiteDatabaseForWritable.rawQuery(sql, params);
         } finally {
             Logger.I(sql);
+
         }
     }
 
 
     @Override
     public <T> String getTableName(@NonNull Class<T> aClass) {
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        return metaData.tableName;
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            return metaData.tableName;
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
     public <T> int deleteRows(@NonNull Class<T> aClass) {
-
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "deleteRows", "aClass");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "deleteRows", "aClass");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+            }
+            String where = whereBuilder(null, metaData);
+            Logger.I("DELETE FROM " + metaData.tableName + where);
+            return sqLiteDatabaseForWritable.delete(metaData.tableName, where, null);
+        }finally {
+            closeAuto();
         }
-        String where = whereBuilder(null, metaData);
-        Logger.I("DELETE FROM " + metaData.tableName + where);
-        return sqLiteDatabaseForWritable.delete(metaData.tableName, where, null);
+
     }
 
     @Override
     public <T> int deleteRows(@NonNull Class<T> aClass, String where, Object... parameters) {
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "deleteRows", "aClass");
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "deleteRows", "aClass");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+            }
+            String tableName = metaData.tableName;
+            if (tableName == null || tableName.trim().isEmpty()) return 0;
+            String[] par = parametrize(parameters);
+            where = whereBuilder(where, metaData);
+            Logger.I("DELETE FROM " + tableName + where + Arrays.toString(par));
+            return sqLiteDatabaseForWritable.delete(tableName, where, par);
+        }finally {
+            closeAuto();
         }
-        String tableName = metaData.tableName;
-        if (tableName == null || tableName.trim().isEmpty()) return 0;
-        String[] par = parametrize(parameters);
-        where = whereBuilder(where, metaData);
-        Logger.I("DELETE FROM " + tableName + where + Arrays.toString(par));
-        return sqLiteDatabaseForWritable.delete(tableName, where, par);
+
 
     }
 
@@ -1066,34 +1226,54 @@ public class Configure implements ISession {
     @Override
     public void dropTableIfExists(@NonNull String tableName) {
 
-        if (tableName.trim().isEmpty()) {
-            throw new RuntimeException("Missing table name in parameter");
+        try {
+            if (tableName.trim().isEmpty()) {
+                throw new RuntimeException("Missing table name in parameter");
+            }
+            sqLiteDatabaseForWritable.execSQL("DROP TABLE IF EXISTS " + tableName);
+            Logger.I("DROP TABLE IF EXISTS" + tableName);
+        }finally {
+            closeAuto();
         }
-        sqLiteDatabaseForWritable.execSQL("DROP TABLE IF EXISTS " + tableName);
-        Logger.I("DROP TABLE IF EXISTS" + tableName);
+
     }
 
     @Override
     public <T> void dropTableIfExists(@NonNull Class<T> aClass) {
-        CacheMetaData<T> metaData = getCacheMetaData(aClass);
-        checkingUsageType(metaData, "dropTableIfExists", "aClass");
+        try {
+            CacheMetaData<T> metaData = getCacheMetaData(aClass);
+            checkingUsageType(metaData, "dropTableIfExists", "aClass");
 
-        if (metaData.isTableReadOnly) {
-            throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+            if (metaData.isTableReadOnly) {
+                throw new RuntimeException("You can only extract data from the table. (@MapTableReadOnly)");
+            }
+
+            sqLiteDatabaseForWritable.execSQL("DROP TABLE  IF EXISTS " + metaData.tableName);
+            Logger.I("DROP TABLE IF EXISTS " + metaData.tableName);
+        }finally {
+            closeAuto();
         }
 
-        sqLiteDatabaseForWritable.execSQL("DROP TABLE  IF EXISTS " + metaData.tableName);
-        Logger.I("DROP TABLE IF EXISTS " + metaData.tableName);
     }
 
     @Override
     public <T> void createTable(@NonNull Class<T> aClass) throws Exception {
-        createTableInner(aClass, "");
+        try {
+            createTableInner(aClass, "");
+        }finally {
+            closeAuto();
+        }
+
     }
 
     @Override
     public <T> void createTableIfNotExists(@NonNull Class<T> aClass) throws Exception {
-        createTableInner(aClass, "IF NOT EXISTS");
+        try {
+            createTableInner(aClass, "IF NOT EXISTS");
+        }finally {
+            closeAuto();
+        }
+
     }
 
 
@@ -1123,16 +1303,25 @@ public class Configure implements ISession {
 
     @Override
     public void beginTransaction() {
+        if(isAutoClose){
+            throw new RuntimeException("It is prohibited to use transactions in the automatic session closing mode.");
+        }
         sqLiteDatabaseForWritable.beginTransaction();
     }
 
     @Override
     public void commitTransaction() {
+        if(isAutoClose){
+            throw new RuntimeException("It is prohibited to use transactions in the automatic session closing mode.");
+        }
         sqLiteDatabaseForWritable.setTransactionSuccessful();
     }
 
     @Override
     public void endTransaction() {
+        if(isAutoClose){
+            throw new RuntimeException("It is prohibited to use transactions in the automatic session closing mode.");
+        }
         sqLiteDatabaseForWritable.endTransaction();
     }
 
@@ -1151,31 +1340,36 @@ public class Configure implements ISession {
 
     private Object InnerListExe(String sql, String[] strings) {
 
-        try (Cursor cursor = sqLiteDatabaseForReadable.rawQuery(sql, strings)) {
-            if (cursor.moveToFirst()) {
-                do {
-                    int i = cursor.getType(0);
-                    switch (i) {
-                        case Cursor.FIELD_TYPE_NULL: {
-                            return null;
+        try {
+            try (Cursor cursor = sqLiteDatabaseForReadable.rawQuery(sql, strings)) {
+                if (cursor.moveToFirst()) {
+                    do {
+                        int i = cursor.getType(0);
+                        switch (i) {
+                            case Cursor.FIELD_TYPE_NULL: {
+                                return null;
+                            }
+                            case Cursor.FIELD_TYPE_INTEGER: {
+                                return cursor.getInt(0);
+                            }
+                            case Cursor.FIELD_TYPE_FLOAT: {
+                                return cursor.getFloat(0);
+                            }
+                            case Cursor.FIELD_TYPE_STRING: {
+                                return cursor.getString(0);
+                            }
+                            case Cursor.FIELD_TYPE_BLOB: {
+                                return cursor.getBlob(0);
+                            }
                         }
-                        case Cursor.FIELD_TYPE_INTEGER: {
-                            return cursor.getInt(0);
-                        }
-                        case Cursor.FIELD_TYPE_FLOAT: {
-                            return cursor.getFloat(0);
-                        }
-                        case Cursor.FIELD_TYPE_STRING: {
-                            return cursor.getString(0);
-                        }
-                        case Cursor.FIELD_TYPE_BLOB: {
-                            return cursor.getBlob(0);
-                        }
-                    }
-                } while (cursor.moveToNext());
+                    } while (cursor.moveToNext());
+                }
             }
+            return null;
+        }finally {
+            closeAuto();
         }
-        return null;
+
     }
 
     /**

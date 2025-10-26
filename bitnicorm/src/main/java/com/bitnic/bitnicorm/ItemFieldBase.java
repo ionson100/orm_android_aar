@@ -13,4 +13,5 @@ import java.lang.reflect.Type;
     public Type type;
 
     public String typeName;
+    public Class aClassUserType;
 }

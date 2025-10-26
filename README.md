@@ -2,38 +2,38 @@
 Лицензия: https://www.apache.org/licenses/LICENSE-2.0.txt
 [Быстрый старт](#start)
 
-| Маппинг                                                       | ISession                                                |
-|---------------------------------------------------------------|---------------------------------------------------------|
-| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                                       |
-| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                                       |
-| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                                       |
-| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)                               |
-| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)                               |
-| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                               |
-| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                     |
-| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                         |
-| [@MapForeignKey](#@MapForeignKey)                             | [getListFree](#getListFree)                             |
-| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                       |
-| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                         |
-|                                                               | [singleOrDefault](#singleOrDefault)                     |
-| [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                               |
-| [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                     |
-| [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                         |
-| [Fluent Interface](#Fluent)                                   | [executeSQL](#executeSQL)                               |
-| [Получение не полной записи из таблицы](#312)                 | [any](#any)                                             |
-| [Как подключить к проекту](#312312)                           | [tableExists](#tableExists)                             |
-|                                                               | [getTableName](#getTableName)                           |
-|                                                               | [createTable](#createTable)                             |
-|                                                               | [createTableIfNotExists](#createTableIfNotExists)       |
-|                                                               | [dropTableIfExists](#dropTableIfExists)                 |
-|                                                               | [getPath](#getPath)                                     |
-|                                                               | [IsAlive](#IsAlive)                                     |
-|                                                               | [SqLiteDatabaseForWritable](#SqLiteDatabaseForWritable) |
-|                                                               | [SqLiteDatabaseForReadable](#SqLiteDatabaseForReadable) |
-|                                                               | [getContentValues](#getContentValues)                   |
-|                                                               | [getContentValuesForUpdate](#getContentValuesForUpdate) |
-|                                                               | [save](#save)                                           |
-|                                                               | [objectFiller](#objectFiller)                           |
+| Маппинг                                                       | ISession                                                  |
+|---------------------------------------------------------------|-----------------------------------------------------------|
+| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                                         |
+| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                                         |
+| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                                         |
+| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)                                 |
+| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)                                 |
+| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                                 |
+| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                       |
+| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                           |
+| [@MapForeignKey](#@MapForeignKey)                             | [getListFree](#getListFree)                               |
+| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                         |
+| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                           |
+| [Получение сессии](#session)                                  | [singleOrDefault](#singleOrDefault)                       |
+| [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                                 |
+| [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                       |
+| [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                           |
+| [Fluent Interface](#Fluent)                                   | [executeSQL](#executeSQL)                                 |
+| [Получение не полной записи из таблицы](#312)                 | [any](#any)                                               |
+| [Как подключить к проекту](#312312)                           | [tableExists](#tableExists)                               |
+| [Асинхронные операции](#async)                                | [getTableName](#getTableName)                             |
+|                                                               | [createTable](#createTable)                               |
+|                                                               | [createTableIfNotExists](#createTableIfNotExists)         |
+|                                                               | [dropTableIfExists](#dropTableIfExists)                   |
+|                                                               | [getPath](#getPath)                                       |
+|                                                               | [IsAlive](#IsAlive)                                       |
+|                                                               | [SqLiteDatabaseForWritable](#SqLiteDatabaseForWritable)   |
+|                                                               | [SqLiteDatabaseForReadable](#SqLiteDatabaseForReadable)   |
+|                                                               | [getContentValues](#getContentValues)                     |
+|                                                               | [getContentValuesForUpdate](#getContentValuesForUpdate)   |
+|                                                               | [save](#save)                                             |
+|                                                               | [objectFiller](#objectFiller)                             |
 
 
 
@@ -50,7 +50,7 @@ namespace = "com.bitnic.bitnicorm"\
 Класс должен иметь открытый конструктор без параметров. \
 
 ##### Партикулярно воспринимаются следующие типы:
-long, short, byte, int, Byte, Long, Short. Integer как INTEGER, \
+long, short, byte, int, Byte, Long, Short. Integer как INTEGER, LocalDateTime \
 float, double, Float, Double как REAL, \
 boolean, Boolean как BOOL, \
 Date как DATE, хранится строкой, \
@@ -405,6 +405,13 @@ Configure(String dataBaseName, int version, Context context, List<Class> classLi
  new Configure("db.sqlite",3,appContext,true);
  //or new Configure("db.sqlite",3,appContext);
 ```
+### Получение сессии <a name="session"></a>
+Получить сессию можно двух типов: \
+```ISession session=Configure.getSession()```\
+ - Сессия получается на много операций с базой данных и возможностью работы с трансакциями. \
+```ISesssion = Cinfigure.getSessionAutoClose()```
+ - Сессия получается на одну операцию, после выполнения сессия автоматически закрывается, с трансакциями работать невозможно.
+
 Теперь в любом месте приложения можно получить сессию и работать с ней. \
 Пример точечной работы:
 ```java
@@ -1281,6 +1288,52 @@ for (int i = 0; i <5; i++) {
 параметр parameters, транслируется в массив строк, очередность записи,
 должна соответствовать очередность применения параметра (?) в строке условия запроса.
 
+### Асинхронные операции <a name="async"></a>
+В Fluent методах интерфейса IQueryable реализованы обертки ```CompletableFuture``` для асинхронного обращения к базе данных,
+без блокировки основного потока, реализованы не все методы, а наиболее востребованные. Обращение типичное.
+Примеры как с ними работать есть в Javadoc архиве.
+Базовый пример:
+```java
+java
+import android.os.Handler;
+import android.os.Looper;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+// Создаем собственный пул потоков для фоновых задач
+ExecutorService executor = Executors.newFixedThreadPool(4);
+
+public void fetchDataAndDisplay() {
+    // 1. Запускаем асинхронную задачу в нашем пуле потоков
+    CompletableFuture.supplyAsync(() -> {
+        // Имитация длительной операции (например, сетевого запроса)
+        try {
+            Thread.sleep(2000);
+            return "Загруженные данные";
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+    }, executor)
+    // 2. Обрабатываем результат после завершения первой задачи
+    .thenApplyAsync(result -> {
+        // Имитация обработки данных
+        return "Обработанные данные: " + result;
+    }, executor)
+    // 3. Выполняем действия с результатом в главном потоке
+    .thenAcceptAsync(finalResult -> {
+        // Обновление UI-компонента
+        updateTextView(finalResult);
+    }, command -> new Handler(Looper.getMainLooper()).post(command));
+}
+
+// Метод для обновления UI, должен вызываться в главном потоке
+private void updateTextView(String text) {
+    // Здесь код для обновления TextView, ProgressBar и т. д.
+    // textView.setText(text);
+}
+```
+
 ### Как подключить к проекту. <a name="312312"></a>
 В корне проекта есть директория: ```aar``` в ней  два файла: ```bitnicorm-release.aar``` и ```sources.jar``` - (таблицы описания справки)
 Что бы подключить к проекту: создайте директорию ```libs```
@@ -1289,9 +1342,12 @@ app/
 ├─ libs/
 │   ├─ bitnicorm-release.aar
 │   └─ sources.jar
-└─ build.gradle.kts
+├─ build.gradle.kts
+│
+└─../ settings.gradle.kts
+
 ```
-в файле: ```settings.gradle.kts``` укажите откуда брать подсказки.
+В файле: ```settings.gradle.kts``` укажите откуда брать подсказки.
 ```markdown
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -1304,7 +1360,7 @@ dependencyResolutionManagement {
     }
 }
 ```
-в файле ```build.gradle.kts```
+В файле ```build.gradle.kts```
 ```markdown
 dependencies {
 
