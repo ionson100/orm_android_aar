@@ -1,76 +1,65 @@
-### Еще одна ORM для андроида
-Лицензия: https://www.apache.org/licenses/LICENSE-2.0.txt
-[Быстрый старт](#start)
+### Another ORM for Android
+License: https://www.apache.org/licenses/LICENSE-2.0.txt
+[Quick Start](#start)
 
-| Маппинг                                                       | ISession                                                  |
-|---------------------------------------------------------------|-----------------------------------------------------------|
-| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                                         |
-| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                                         |
-| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                                         |
-| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)                                 |
-| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)                                 |
-| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                                 |
-| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                       |
-| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                           |
-| [@MapForeignKey](#@MapForeignKey)                             | [getListFree](#getListFree)                               |
-| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                         |
-| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                           |
-| [Получение сессии](#session)                                  | [singleOrDefault](#singleOrDefault)                       |
-| [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                                 |
-| [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                       |
-| [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                           |
-| [Fluent Interface](#Fluent)                                   | [executeSQL](#executeSQL)                                 |
-| [Получение не полной записи из таблицы](#312)                 | [any](#any)                                               |
-| [Как подключить к проекту](#312312)                           | [tableExists](#tableExists)                               |
-| [Асинхронные операции](#async)                                | [getTableName](#getTableName)                             |
-|                                                               | [createTable](#createTable)                               |
-|                                                               | [createTableIfNotExists](#createTableIfNotExists)         |
-|                                                               | [dropTableIfExists](#dropTableIfExists)                   |
-|                                                               | [getPath](#getPath)                                       |
-|                                                               | [IsAlive](#IsAlive)                                       |
-|                                                               | [SqLiteDatabaseForWritable](#SqLiteDatabaseForWritable)   |
-|                                                               | [SqLiteDatabaseForReadable](#SqLiteDatabaseForReadable)   |
-|                                                               | [getContentValues](#getContentValues)                     |
-|                                                               | [getContentValuesForUpdate](#getContentValuesForUpdate)   |
-|                                                               | [save](#save)                                             |
-|                                                               | [objectFiller](#objectFiller)                             |
+| Mapping                                                       | ISession                                                |
+|---------------------------------------------------------------|---------------------------------------------------------|
+| [@MapTable @MapTableName](#@MapTable)                         | [insert](#insert)                                       |
+| [@MapAppendCommandCreateTable](#@MapAppendCommandCreateTable) | [update](#update)                                       |
+| [@MapTableWhere](#@MapTableWhere)                             | [delete](#delete)                                       |
+| [@MapPrimaryKey @MapPrimaryKeyName](#@MapPrimaryKey)          | [deleteRows](#deleteRows)                               |
+| [@MapColumn @MapColumnName](#@MapColumn)                      | [updateRows](#updateRows)                               |
+| [@MapColumnJson](#@MapColumnJson)                             | [insertBulk](#insertBulk)                               |
+| [@MapColumnType](#@MapColumnType)                             | [getList](#getList)                                     |
+| [@MapColumnIndex](#@MapColumnIndex)                           | [getListSelect](#getListSelect)                         |
+| [@MapForeignKey](#@MapForeignKey)                             | [getListFree](#getListFree)                             |
+| [@MapColumnReadOnly](#@MapColumnReadOnly)                     | [firstOrDefault](#firstOrDefault)                       |
+| [@MapTableReadOnly](#@MapTableReadOnly)                       | [first](#first)                                         |
+| [Getting a Session](#session)                                 | [singleOrDefault](#singleOrDefault)                     |
+| [class Persistent](#@Persistent)                              | [distinctBy](#distinctBy)                               |
+| [Interface IEventOrm](#IEventOrm)                             | [groupBy](#groupBy)                                     |
+| [Interface IUserType](#IUserType)                             | [executeScalar](#executeScalar)                         |
+| [Fluent Interface](#Fluent)                                   | [executeSQL](#executeSQL)                               |
+| [Getting a Partial Record from a Table](#312)                 | [any](#any)                                             |
+| [How to connect to a project](#312312)                        | [tableExists](#tableExists)                             |
+| [Asynchronous operations](#async)                             | [getTableName](#getTableName)                           |
+|                                                               | [createTable](#createTable)                             |
+|                                                               | [createTableIfNotExists](#createTableIfNotExists)       |
+|                                                               | [dropTableIfExists](#dropTableIfExists)                 |
+|                                                               | [getPath](#getPath)                                     |
+|                                                               | [IsAlive](#IsAlive)                                     |
+|                                                               | [SqLiteDatabaseForWritable](#SqLiteDatabaseForWritable) |
+|                                                               | [SqLiteDatabaseForReadable](#SqLiteDatabaseForReadable) |
+|                                                               | [getContentValues](#getContentValues)                   |
+|                                                               | [getContentValuesForUpdate](#getContentValuesForUpdate) |
+|                                                               | [save](#save)                                           |
+|                                                               | [objectFiller](#objectFiller)                           |
 
 
 
-Написана java 11.\
-minSdk = 24\
-compileSdk = 36\
-namespace = "com.bitnic.bitnicorm"\
-Исполнена в стиле [Hibernate](https://www.geeksforgeeks.org/java/hibernate-tutorial/).\
-Инициализация конфигурации -> инициализация скрытой фабрики сессии на SQLiteOpenHelper -> получение сессии\
-кеширования нет.\
-Сессия: единица работы с базой данных, реализует [Closable](https://www.geeksforgeeks.org/java/closeable-interface-in-java/)
-#### Условия и соглашения по использованию:
-Поле первичного ключа обязательно. Оно только одно.\
-Класс должен иметь открытый конструктор без параметров. \
+Written in Java 11.
 
-##### Партикулярно воспринимаются следующие типы:
-long, short, byte, int, Byte, Long, Short. Integer как INTEGER, LocalDateTime \
-float, double, Float, Double как REAL, \
-boolean, Boolean как BOOL, \
-Date как DATE, хранится строкой, \
-String, UUID, BigDecimal как TEXT, \
-остальные типы воспринимаются как массив байтов BLOB \
-Массивы, списки словари, все сериализуется - как массив байтов по правилам интерфейса:
-[Serializable](https://www.geeksforgeeks.org/java/serialization-and-deserialization-in-java/)
-и
-[Externalizable](https://www.geeksforgeeks.org/java/externalizable-interface-java/) \
-Если вы будете использовать в таблице свой тип, то этот тип должен реализовывать вышесказанные интерфейсы.\
-Не стоит забывать, что это негативно сказывается на быстродействии работы с базой, (получение вставка обновление). \
-Есть возможность хранить объекты в виде JSON, маркируя поле аннотацией ```@MapColumnJson```, но тут могут возникнуть проблемы с приведением типа. \
-Хотя этот тип сериализация расширяет возможности работы с базой:
-[тынц](https://www.sqlitetutorial.net/sqlite-json/)
+minSdk = 24
+compileSdk = 36
+namespace = "com.bitnic.bitnicorm"
+Implemented in the [Hibernate](https://www.geeksforgeeks.org/java/hibernate-tutorial/) style.
 
-> [!NOTE]\
-> Внимание: Если вы хотите пользоваться атрибутом ```@MapColumnJson```, у вас должна быть подключенная зависимость:
-> ```implementation("com.google.code.gson:gson:2.13.2")```, версию можете выбрать сами.
+Configuration initialization -> initialization of the hidden session factory on SQLiteOpenHelper -> obtaining the session
+no caching.
 
-###  Быстрый старт <a name="start"></a>
+Session: the unit of work with the database, implements [Closable](https://www.geeksforgeeks.org/java/closeable-interface-in-java/)
+#### Terms and conventions for use:
+The primary key field is required. There is only one.
+The class must have a public constructor without parameters.
+
+##### The following types are treated as private:
+long, short, byte, int, Byte, Long, Short. Integer as INTEGER, LocalDateTime \
+float, double, Float, Double as REAL, \
+boolean, Boolean as BOOL, \
+Date as DATE, stored as a string, \
+String, UUID, BigDecimal as TEXT, \
+
+### Quick Start <a name="start"></a>
 
 ```java
 @MapTable
@@ -114,8 +103,8 @@ try (ISession session = Configure.getSession()) {
 }
 ```
 
-Пример сериализации c использованием [Serializable](https://www.geeksforgeeks.org/java/serialization-and-deserialization-in-java/)
-и
+Example of serialization using [Serializable](https://www.geeksforgeeks.org/java/serialization-and-deserialization-in-java/)
+And
 [Externalizable](https://www.geeksforgeeks.org/java/externalizable-interface-java/)
 
 ```java
@@ -217,14 +206,7 @@ assertTrue(list.get(0).id == 1L);
 ```
 
 
-
-
-
-
-
-
-
-Пример возможных реализации:
+Example of possible implementation:
 
 ```java
 @MapTable //or @MapTableName("simple_table")
@@ -258,48 +240,44 @@ class SimpleTable{
     public MyClass myClass= new MyClass()
 }
 ```
-
 ### Mapping Annotation
 
 #### @MapTable <a name="@MapTable"></a>
-Уровень класса. Обязательная. Устанавливает связь класса с таблицей, имя таблицы берется такое же, как имя класса.
+Class level. Required. Associates the class with a table; the table name is the same as the class name.
 #### @MapTableName(name table)
-Уровень класса. Обязательная. Устанавливает связь класса с таблицей, имя таблицы вводится как строка в аннотацию.
-
+Class level. Required. Associates the class with a table; the table name is entered as a string in the annotation.
 
 > [!NOTE]\
-> Внимание: Без аннотаций MapTable и MapTableName никакой связи не произойдет, \
-а при использовании этого класса, получится ошибка.
-
+> Warning: Without the MapTable and MapTableName annotations, no association will occur,\
+and using this class will result in an error.
 
 #### @MapTableReadOnly <a name="@MapTableReadOnly"></a>
-Классы типов помеченные этой аннотацией предназначены только для просмотра содержимого таблицы.\
-Нельзя создавать таблицы на основе типов, объекты нельзя: вставлять, обновлять, удалять из таблицы.
+Type classes marked with this annotation are intended only for viewing table contents.\
+Tables cannot be created based on the types; objects cannot be inserted, updated, or deleted from the table.
 
 ```java
 @MapTable
 @MapTableReadOnly
-public class Part  {
-    @MapPrimaryKey
-    public int id;
-    @MapColumn
-    public String name1;
+public class Part {
+@MapPrimaryKey
+public int id;
+@MapColumn
+public String name1;
 }
 static public class Parent extends Part{
-    @MapColumn
-    String name2;
+@MapColumn
+String name2;
 }
 ```
 
 #### @MapAppendCommandCreateTable(string) <a name="@MapAppendCommandCreateTable"></a>
-Позволяет указать скрипт, который выполнится при создании таблицы.
+Allows you to specify a script to run when creating a table.
 > [!NOTE]\
-> Внимание: Эту аннотацию не стоит применять при создании таблицы через создание Configure (new Configure), \
-> а так же через команду ```createTableIfNotExists``` в чистом виде, без проверки на существовании таблицы,
-> дело в том что скрипт будет вызываться всегда, даже если таблица уже создана.
+> Warning: This annotation should not be used when creating a table using Configure (new Configure),\
+> or using the ```createTableIfNotExists``` command in its pure form, without checking for the table's existence,
+> because the script will always be called, even if the table has already been created.
 
-Где ее стоит применять.(создание таблиц под контролем):
-
+Where it should be applied (create tables under control):
 ```java
 
  ISession session = Configure.getSession();
@@ -323,67 +301,62 @@ static public class Parent extends Part{
  }
 ```
 #### @Table(line condition without the word where) <a name="@MapTableWhere"></a>
-Уровень класса. В этом аттрибуте указывается условие которое будет автоматически подставляться\
-в условия всех выборок из базы данных (при использовании сессии), даже если вы не укажете их при запросе.\
-А так же, в ```session.count```
-####  @MapPrimaryKey <a name="@MapPrimaryKey"></a>
-Уровень поля класса. Обязательный. Устанавливает связь с первичным ключом таблицы, имя поля таблицы\
-устанавливается как имя поля класса.
-####  @MapPrimaryKeyName(name column)
-Уровень поля класса. Обязательный. Устанавливает связь с первичным ключом таблицы, имя поля таблицы\
-прописывается в аннотации.
+Class level. This attribute specifies a condition that will be automatically substituted into the conditions of all database selections (when using a session), even if you don't specify them in the query.
+
+Also, in ```session.count```
+#### @MapPrimaryKey <a name="@MapPrimaryKey"></a>
+Class field level. Required. Establishes a relationship with the table's primary key; the table field name is set as the class field name.
+#### @MapPrimaryKeyName(name column)
+Class field level. Required. Establishes a relationship with the table's primary key; the table field name is specified in the annotation.
 #### @MapColumn <a name="@MapColumn"></a>
-Уровень поля класса. Обязательный если вы хотите проецировать поле в таблицу.\
-Название поля таблицы будет таким же как поле класса.
+Class field level. Required if you want to map the field to the table.
+The table field name will be the same as the class field.
 
 #### @MapColumnName(name column)
-Уровень поля класса. Обязательный если вы хотите проецировать поле в таблицу.\
-Название поля таблицы указывается в аннотации.
+Class field level. Required if you want to map the field to a table.
+
+The table field name is specified in the annotation.
 
 #### @MapColumnJson <a name="@MapColumnJson"></a>
-Поля класса помеченные этой аннотацией, будут отображаться в безе данных как текст в формате json.
+Class fields marked with this annotation will be displayed in the database as text in JSON format.
 
-> [!NOTE]\
-> Внимание: Если вы хотите пользоваться атрибутом ```@MapColumnJson```, у вас должна быть подключенная зависимость:
-> ```implementation("com.google.code.gson:gson:2.13.2")```, версию можете выбрать сами.
+> [!NOTE]
+> Attention: If you want to use the ```@MapColumnJson``` attribute, you must have the following dependency enabled:
+> ```implementation("com.google.code.gson:gson:2.13.2")```. You can choose the version yourself.
 
-
-
-
-####  @MapColumnType("TEXT UNIQUE") <a name="@MapColumnType"></a>
-Если вам не нравится как орм подбирает тип поля таблицы и значение по умолчанию, вы можете определить свое значение.
-#### @MapColumnIndex <a name="@MapColumnIndex"></a>
-При попытке или создании таблицы будет выполнен скрипт создания индекса по полю с условием если его нет.
-Если вы хотите создать индекс по вум или более полям, вам стоит воспользоваться: ```MapAppendCommandCreateTable```\
-или ``` session.executeSQL```
+#### @MapColumnType("TEXT UNIQUE") <a name="@MapColumnType"></a>
+If you don't like how the form selects the table field type and default value, you can define your own. #### @MapColumnIndex <a name="@MapColumnIndex"></a>
+When attempting to create a table, the index creation script for the field will be executed, with a condition if it doesn't exist.
+If you want to create an index on multiple or more fields, you should use: ```MapAppendCommandCreateTable```\
+or ``` session.executeSQL```
 #### @MapForeignKey("FOREIGN KEY (email) REFERENCES SimpleTable (email)") <a name="@MapForeignKey"></a>
-Будет вставлена строка создания ForeignKey при формировании скрипта запроса на создание таблицы.
+A ForeignKey creation string will be inserted when generating the table create query script.
 
 #### @MapColumnReadOnly <a name="@MapColumnReadOnly"></a>
-Поля класса помеченные этой аннотацией, не будут участвовать в запросе на вставку и модификацию записи. \
-Пример: Таблица, поле у которой dateCreate, указывает на дату создания записи, ее нельзя модифицировать, и она заполняется базой данных.
+Class fields marked with this annotation will not be included in insert and update queries. \
+Example: A table with a dateCreate field that specifies the record's creation date cannot be modified and is populated by the database.
 
 ```java
-    @MapTableName("t_23_1"
-    static class Table22{
-        @MapPrimaryKey
-        UUID uuid=UUID.randomUUID();
-        
-        @MapColumn
-        int count=3;
+@MapTableName("t_23_1"
+static class Table22{
+@MapPrimaryKey
+UUID uuid=UUID.randomUUID();
 
-        @MapColumn
-        @MapColumnType("DATE DEFAULT CURRENT_TIMESTAMP")
-        @MapColumnReadOnly
-        public Date dateCreate;
-    }
+@MapColumn
+int count=3;
+
+@MapColumn
+@MapColumnType("DATE  DEFAULT CURRENT_TIMESTAMP")
+@MapColumnReadOnly
+public Date dateCreate;
+}
 
 ```
 
-### Использование
-При старте приложения нужно создать конфигурацию, где указать: имя файла базы или полный путь к нему, версию базы, и контекст приложения,
-а так же опционально, писать ли в лог запросы к базе.\
-Три конструктора:
+### Usage
+When starting the application, you need to create a configuration that specifies: the database file name or full path to it, the database version, and the application context,
+and optionally whether to log database queries.
+Three constructors:
 
 ```java
 Configure(String dataBaseName, int version, Context context);
@@ -391,210 +364,157 @@ Configure(String dataBaseName, int version, Context context, boolean isWriteLog)
 Configure(String dataBaseName, int version, Context context, List<Class> classList, boolean isWriteLog);
 
 ```
-```List<Class> classList``` - это список типов классов на основе которых будут созданы таблицы в базе автоматически.\
-Таблицы создаются в контексте единой трансакции, и если будет ошибка, всё создание откатится.\
-Как правило, создание происходить при старте приложения.\
-Пример со списком:
+```List<Class> classList``` is a list of class types based on which tables will be automatically created in the database.\
+Tables are created within the context of a single transaction, and if an error occurs, the entire creation is rolled back.\
+Typically, creation occurs at application startup.\
+Example with a list:
 ```java
- List<Class> classList=new ArrayList<>();
- classList.add(MyTable.class);
- new Configure("db.sqlite",3,appContext,classList,true);
+List<Class> classList=new ArrayList<>();
+classList.add(MyTable.class);
+new Configure("db.sqlite",3,appContext,classList,true);
 ```
-Пример без списка:
+Example without a list:
 ```java
- new Configure("db.sqlite",3,appContext,true);
- //or new Configure("db.sqlite",3,appContext);
+new Configure("db.sqlite",3,appContext,true);
+//or new Configure("db.sqlite",3,appContext);
 ```
-### Получение сессии <a name="session"></a>
-Получить сессию можно двух типов: \
+### Getting a session <a name="session"></a>
+You can get a session in two ways Types: \
 ```ISession session=Configure.getSession()```\
- - Сессия получается на много операций с базой данных и возможностью работы с трансакциями. \
-```ISesssion = Cinfigure.getSessionAutoClose()```
- - Сессия получается на одну операцию, после выполнения сессия автоматически закрывается, с трансакциями работать невозможно.
+- A session is acquired for multiple database operations and the ability to work with transactions. \
+  ```ISesssion = Cinfigure.getSessionAutoClose()```
+- A session is acquired for a single operation; after execution, the session is automatically closed; transactions cannot be worked with.
 
-Теперь в любом месте приложения можно получить сессию и работать с ней. \
-Пример точечной работы:
+Now you can get and work with a session anywhere in the application. \
+Example of specific work:
 ```java
-  try (ISession session = Configure.getSession()) {
-          
-          //do work
-            
-   } catch (IOException e) {
-      throw new RuntimeException(e);
-   }
+try (ISession session = Configure.getSession()) {
+
+//do work
+
+} catch (IOException e) {
+throw new RuntimeException(e);
+}
 
 ```
-При создании в activities, сессию создаем в ```onCreate ``` закрываем в ```onDestroy``` \
-Объект сессии: ```ISession``` - можно передавать в метод как параметр.
+When creating an activity, the session is created in ```onCreate``` and closed in ```onDestroy``` \
+Session object: ```ISession``` - can be passed to the method as parameter.
 
-Создание конфигурации через конструктор со списком типов на создание таблиц, я наверное буду считать устаревшим, \
-я рекомендую создать класс с закрытым конструктором Starter, в статическом методе run, производить создание таблиц
-под контролем, через проверку таблиц на существование. В контексте единой трансакции.
+Creating a configuration via a constructor with a list of table creation types is probably deprecated.
 
-### Давайте поговорим что реализовано в ```ISession```
+I recommend creating a class with a private Starter constructor, in a static run method, and creating tables under control by checking for table existence. Within the context of a single transaction.
+
+### Let's talk about what's implemented in ```ISession```
 
 #### < T > void insert(@NonNull T item) <a name="insert"></a>
 
-Этот метод позволяет вставить объект как запись в базу данных. \
-Он ничего не возвращаете, в случае ошибки, при вставке, возникнет исключение.
-> [!NOTE]\
-> Внимание: Если вы используете поле первичного ключа, как цифровой типы, орм считает что это авто инкрементные поля,
-> и эти данные в ставке не участвую. \
-> Но при вставке, (если у дачно) объект получит реальное значение ключа из базы данных. \
-> По существу, будет сделано два запроса, (Insert and SELECT last_insert_rowid()) в контексте внутренней трансакции. \
-> Если у вас будет своя трансакция, она заменит внутреннею.
+This method allows you to insert an object as a record into the database.
 
-Пример:
-```java
- ISession session = Configure.getSession;
- MyTable table = new MyTable();
- session.insert(table);
-```
-#### < T > int update(@NonNull T item)<a name="update"></a>
-Метод обновляет запись в базе данных, обновление происходит по значению первичного ключа. \
-Обновление происходит по все полям. \
-В случае успеха вернется 1, 0 запись не обновлена. \
-Из-за чего может вернуться 0, скорее всего не будет найдена запись с первичным ключом. \
-Используйте по возможности UUID.
-Пример:
-```java
- ISession session = Configure.getSession;
- MyTable table = new MyTable();
- session.insert(table);
- table = session.firstOrDefault(MyTable.class,"id = ?",table.id);
- var res = session.update(table);
-```
-#### < T > int update(@NonNull T item,String appendWhere, Object... parameters);
-Метод обновляет запись в базе данных, обновление происходит по значению первичного ключа, и добавочным ограничением, с возможностью использовать параметры. \
-Оптимистическое обновление. \
-Обновление происходит по все полям. \
-В случае успеха вернется 1, 0 запись не обновлена. \
-Из-за чего может вернуться 0, скорее всего не будет найдена запись с первичным ключом и дополнительными условиями. \
-```java
-@MapTable
-class TableAppend{ 
-    @MapPrimaryKey
-    public long id;
-    @MapColumn
-    public String name;
-    @MapColumn
-    public Date date= new Date();
-    @MapColumn
-    public UUID uuid= UUID.randomUUID();
-    @MapColumn
-    public BigDecimal bigDecimal= new BigDecimal("1111111");
-}
-ISession session=Configure.getSession();
-session.insert(new TableAppend());
-var o=session.firstOrDefault(TableAppend.class,null);
-o.name="11";
-var res=session.update(o," date = ? and uuid=? and bigDecimal = ?",o.date,o.uuid,o.bigDecimal);
-assertTrue(res==1);
-
+It does nothing.
 ```
 #### < T > int delete(@NonNull T item);<a name="delete"></a>
-Метод удаляет запись в базе данных, удаление происходит по значению первичного ключа. \
-В случае успеха вернется 1, 0 запись не удалена. \
-Из-за чего может вернуться 0, скорее всего не будет найдена запись с первичным ключом на удаление. \
+This method deletes a record in the database based on the primary key value. \
+If successful, 1 will be returned; 0 means the record is not deleted. \
+A 0 return value may indicate that a record with the primary key to delete was most likely not found. \
 ```java
- ISession session = Configure.getSession;
- MyTable table = new MyTable();
- session.insert(table);
- table = session.firstOrDefault(MyTable.class,"id = ?",table.id);
- var res = session.delete(table);
+ISession session = Configure.getSession;
+MyTable table = new MyTable();
+session.insert(table);
+table = session.firstOrDefault(MyTable.class,"id = ?",table.id);
+var res = session.delete(table);
 ```
 #### < T > int deleteRows(@NonNull Class<T> aClass); <a name="deleteRows"></a>
-Удаляет все записи в таблице, возвращает количество удаленных записей
+Deletes all records in the table, returns the number of deleted records.
 
 ```java
- ISession session = Configure.getSession;
- MyTable table = new MyTable();
- session.insert(table);
- var res = session.deleteRows(MyTable.class);
+ISession session = Configure.getSession;
+MyTable table = new MyTable();
+session.insert(table);
+var res = session.deleteRows(MyTable.class);
 ```
-####  < T >int deleteRows(@NonNull Class<T> aClass, String where, Object... parameters)
-Удаляет записи из таблицы по условию (где возраст меньше 10), возвращает количество удаленных записей
+#### < T >int deleteRows(@NonNull Class<T> aClass, String where, Object... parameters)
+Deletes records from the table based on a condition (where the age is less than 10), returns the number of deleted records.
 
 ```java
- ISession session = Configure.getSession;
- var res = session.deleteRows(MyTable.class,"age < 10");
+ISession session = Configure.getSession;
+var res = session.deleteRows(MyTable.class,"age < 10");
 ```
 #### < T > int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... parameters) <a name="updateRows"></a>
-Обновляет записи в таблице, где возраст меньше 10, делает у них новое поле name, и меняет возраст на 22, звучит конечно абсурдно,
-но для примера сгодится, возвращает количество обновлённых записей.
+Updates records in the table where the age is less than 10, creates a new name field, and changes the age to 22. Sounds absurd, of course,
+but it's good for an example. Returns the number of updated records.
 ```java
- ISession session = Configure.getSession;
- var res = session.updateRows(MyTable.class,new PairColumnValue()
-                .put("name","name_new")
-                .put("age",22),"age < ?",10);
+ISession session = Configure.getSession;
+var res = session.updateRows(MyTable.class,new PairColumnValue()
+.put("name","name_new")
+.put("age",22),"age < ?",10);
 ```
-Что бы обновить все записи, без условия:
+To update all records, without a condition:
 ```java
- ISession session = Configure.getSession;
- var res = session.updateRows(MyTable.class,new PairColumnValue()
-                .put("name","name_new")
-                .put("age",22),null);
+ISession session = Configure.getSession;
+var res = session.updateRows(MyTable.class,new PairColumnValue()
+.put("name","name_new")
+.put("age",22),null);
 ```
-####  < T > void insertBulk(@NonNull List<T> tList) <a name="insertBulk"></a>
-Позволяет производить пакетную вставку.
-При ошибке возникнет исключение.
+#### < T > void insertBulk(@NonNull List<T> tList) <a name="insertBulk"></a>
+Allows bulk insertion.
+An exception will be raised if an error occurs.
 > [!NOTE]\
-> Внимание: Если ваши типы имеют авто инкрементные первичные ключи, то после пакетной вставки, поля эти не обновляются,
-> в отличии единичного ```insert```. Пустые значения в списке не допускаются
+> Caution: If your types have auto-incrementing primary keys, these fields are not updated after a bulk insert,
+> unlike a single ```insert```. Empty values  in the list are not allowed.
 
 ```java
 ISession session = Configure.getSession;
 List<MyTable> list=new ArrayList<>();
- for (int i = 0; i < 10 ; i++) {
-       MyTable myTable=new MyTable();
-       list.add(myTable);
- }
- session.insertBulk(list);
+for (int i = 0; i < 10 ; i++) {
+MyTable myTable=new MyTable();
+list.add(myTable);
+}
+session.insertBulk(list);
 ```
-####  < T > void insertBulk(@NonNull T... object);
-Позволяет производить пакетную вставку.
-При ошибке возникнет исключение.
+#### < T > void insertBulk(@NonNull T... object);
+Enables bulk insertion.
+An exception will be raised if an error occurs.
 > [!NOTE]\
-> Внимание: Если ваши типы имеют авто инкрементные первичные ключи, то после пакетной вставки, поля эти не обновляются,
-> в отличии единичного ```insert```. Пустые значения в коллекции не допускаются
+> Caution: If your types have auto-incrementing primary keys, these fields are not updated after a bulk insert,
+> unlike a single ```insert```. Empty values  are not allowed in the collection.
 
 ```java
 ISession session = Configure.getSession;
 session.insertBulk(new MyTable(),new MyTable(),new MyTable());
 ```
-####   < T > List<T> getList(@NonNull Class<T> aClass) <a name="getList"></a>
-Позволяет получить полный типизированный список объектов, ассоциированный с записями таблицы.
-При отсутствии результат: пустой список.
+#### < T > List<T> getList(@NonNull Class<T> aClass) <a name="getList"></a>
+Gets a complete typed list of objects associated with table records.
+If none, the result is an empty list.
 ```java
 ISession session = Configure.getSession;
 List<MyTable> list= session.getList(MyTable.class);
 int count = list.size();
 ```
-####  < T > List<T> getList(@NonNull Class<T> aClass, String where, Object... parameters);
+#### < T > List<T> getList(@NonNull Class<T> aClass, String where, Object... parameters);
 
-Позволяет получить типизированный список объектов по условию выборки, ассоциированный с записями таблицы.
-При отсутствии результат: пустой список.\
-Пример:Дай мне все записи, где возраст больше 18, но меньше 64, (я их отправлю на убой), и отсортируй по имени.
+Gets a typed list of objects based on the selection criteria associated with table records.
+If none, the result is an empty list.
+Example: Give me all records where the age is greater than 18 but less than 64 (I'll slaughter them), and sort them by name.
 ```java
 ISession session = Configure.getSession;
 List<MyTable> list= session.getList(MyTable.class,"age > 18 and age < 64 order by name" );
 int count = list.size();
 ```
-Или равнозначно через параметры:
+Or equivalently through parameters:
 
 ```java
 ISession session = Configure.getSession;
 List<MyTable> list= session.getList(MyTable.class,"age > ? and age < ? order by name",18,64 );
 int count = list.size();
 ```
-Пример: Дай мне все записи из таблицы, отсортировав по полю name.
+Example: Give me all the records from the table, sorted by the name field.
 
 ```java
 ISession session = Configure.getSession;
 List<MyTable> list= session.getList(MyTable.class,"1 order by name");
 int count = list.size();
 ```
-Пример: Дай мне все записи из таблицы.
+Example: Give me all the records from a table.
 
 ```java
 ISession session = Configure.getSession;
@@ -602,7 +522,7 @@ List<MyTable> list= session.getList(MyTable.class,null);
 int count = list.size();
 ```
 
-Пример: Дай мне 10 записи из таблицы.
+Example: Give me 10 records from a table.
 
 ```java
 ISession session = Configure.getSession;
@@ -610,123 +530,86 @@ List<MyTable> list= session.getList(MyTable.class,"1 LIMIT 10");
 int count = list.size();
 ```
 > [!NOTE]\
-> Внимание: Если вы не хотите пользоваться параметром where, поставьте null, \
-> если все же нужно, но не надо учитывать where, поставьте 1 и пишите условие дальше.
+> Note: If you don't want to use the where parameter, specify null.
+> If you still need it but don't need to consider the where parameter, specify 1 and continue writing the condition.
 
 #### < T > List<T> getListFree(@NonNull Class<T> aClass,String sql, Object... parameters) <a name="getListFree"></a>
-Позволяет получить типизированный список объектов из таблицы на основе пользовательского запроса.
-Класс типа может содержать аннотации маппинга, может и не содержать.
-Например, вы можете получить только часть полей из таблицы, или получить результат джойна, сформировав сами целевой класс типа. \
-Единственное ограничение, трансляция не работает с таблицами, у которых есть поля помеченные аннотацией: ```@MapGolumnJson```, хотя и это можно
-обойти, поставив в целевом типе эти поля как строку. \
-Требование: Поля название полей в целевом классе типа, должно совпадать с названием колонок в запросе на извлечение, а так жк ожидаемый тип этих полей. \
-Пример, как можно вытащить из таблицы только часть полей:
-```java
-@MapTable
-class TableUser{
-    @MapPrimaryKey
-    public int id;
-    @MapColumn
-    public String name;
-    @MapColumn
-    public int age;
-}
-
-class TableUserPartial{
-    public String name;
-    public int age;
-}
-ISession session = Configure.getSession();
-       
-for (int i = 0; i <  10 ; i++) {
-    TableUser user=new TableUser();
-    session.insert(user);
-}
-
-String sql="select name, age FROM "+session.getTableName(TableUser.class);
-
-List<TableUserPartial> list= session.getListFree(TableUserPartial.class,sql);
-//or
-List<TableUserPartial> list= session.query(TableUserPartial.class).rawSqlSelect(sql).toList();
-```
-
-
+Allows you to get a typed list of objects from a table based on a user query.
+The type class can
 
 #### < T, D extends Object > List<D> getListSelect(@NonNull Class<T> aClass,@NonNull String columnName, String where, Object... parameters); <a name="getListSelect"></a>
-
-Позволяет получить список одиночных значений по определенному полю. \
-Пример: Дай мне список электронных адресов, где адрес не равен null, я отправлю им всем сообщения.
+Allows you to get a list of single values  by a specific field. \
+Example: Give me a list of email addresses where the address is not null, I'll send messages to them all.
 
 ```java
 ISession session = Configure.getSession;
 List<String> list= session.getLisSelect(MyTable.class,"email","email not null");
 int count = list.size();
 ```
-####  < T > T firstOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) <a name="firstOrDefault"></a>
-Иногда нужно получить один объект по условию, п при его отсутствии получить null.
-Этим тут и займемся. \
-Пример: Дай мне только первую запись, где возраст больше 149 при сортировке по имени.
+#### < T > T firstOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) <a name="firstOrDefault"></a>
+Sometimes you need to get a single object based on a condition, and if it doesn't exist, get null.
+That's what we'll do here. \
+Example: Give me only the first record where the age is greater than 149 when sorting by name.
 
 ```java
 ISession session = Configure.getSession;
 MyTable poz = session.firstOrDefault(MyTable.class,"age > ? order by name",149);
 ```
-Тут понятно, может быть только один поц.
+This is clear, there can only be one poz.
 
-####   < T > T first(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception <a name="first"></a>
-Пытается получить первую запись, по условию, если такой записи не существует, выкидывается исключение.
-Пример: Дай мне только первую запись, где возраст больше 149 при сортировке по имени.
+#### < T > T first(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception <a name="first"></a>
+Tries to get the first record. If such a record doesn't exist, an exception is thrown.
+Example: Give me only the first record where the age is greater than 149 when sorting by name.
 
 ```java
 ISession session = Configure.getSession;
 MyTable poz = session.firstOrDefault(MyTable.class,"age > ? and email not null order by name",200);
 ```
-Тут все понятно, будет исключение, столько живут только черепахи, но у них нет электронного адреса.
+This is clear, there will be an exception, only turtles live that long, but they don't have email addresses.
 
-####  < T > T singleOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) <a name="singleOrDefault"></a>
-Иногда возникает желание получить уникальны объект по условию, то есть, он существует в таблице в количестве одного или вообще не существует. \
-Вернет уникальный объект или null;
-Мы спешим к вам:
+#### < T > T singleOrDefault(@NonNull Class<T> aClass, String where, Object... parameters) <a name="singleOrDefault"></a>
+Sometimes you want to get a unique object based on a condition, meaning it exists in the table only once or doesn't exist at all. \
+Returns a unique object or null;
+We're coming to you:
 ```java
 ISession session = Configure.getSession;
 MyTable poz = session.singleOrDefault(MyTable.class,"age > ? and email not null order by name",200);
 ```
-####  < T > T single(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception <a name="single"></a>
-Возвращает уникальны объект по условию. Вернет уникальный объект или выкинет исключение;
+#### < T > T single(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception <a name="single"></a>
+Returns a unique object based on a condition. Returns a unique object or throws an exception;
 
-
-####  < T > List < Object > distinctBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) <a name="distinctBy"></a>
-Возвращает distinct значения по одному полю таблицы базы данных. \
-Пример: Дай мне distinct возраста, что встречаются в таблице, где возраст больше 18 и отсортируй результат по возрастанию
+#### < T > List < Object > distinctBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) <a name="distinctBy"></a>
+Returns distinct values  for a single field in a database table. \
+Example: Give me distinct ages in the table where age is greater than 18 and sort the results in ascending order.
 
 ```java
 ISession session = Configure.getSession;
-List<Integer> list = session.distinctBy(MyTable.class,"age","age > ?  order by age",18);
+List<Integer> list = session.distinctBy(MyTable.class,"age","age > ? order by age",18);
 ```
 #### < T > Map < Object, List< T > > groupBy(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters) <a name="groupBy"></a>
 
-Получает группированный результат по одному полю таблицы, по условию. \
-Возвращает словарь, где ключ: уникальное значение поля, а value: список строк, которые содержат в себе это уникальное значение.
+Gets a grouped result by a single table field, based on a condition. \
+Returns a dictionary where key is a unique field value, and value is a list of rows that contain this unique value.
 
 ```java
 ISession session = Configure.getSession;
-Map<Integer>,List<MyTable>>   result = session.groupBy(MyTable.class,"age",null);
+Map<Integer>,List<MyTable>> result = session.groupBy(MyTable.class,"age",null);
 ```
 #### Object executeScalar(@NonNull String sql, Object... parameters) <a name="executeScalar"></a>
 #### Object executeScalar(@NonNull String sql);
-Это типовые функции, которые есть в любой ОРМ, возвращают одиночное значение запакованное в Object. \
-Кто в теме, это первая строка курсора с индексом колонки 0.
+These are standard functions found in any ORM; they return a single value packed into an Object. \
+For those in the know, this is the first row of the cursor with column index 0.
 ```java
 ISession session = Configure.getSession();
-String sql="Select count (*)  from "+session.getTableName(MyTable.class);
+String sql="Select count (*) from "+session.getTableName(MyTable.class);
 int count= (int) session.executeScalar(sql);
 ```
 ISession session = Configure.getSession;
 
 #### void executeSQL(@NonNull String sql, Object... parameters) <a name="executeSQL"></a>
 
-Это типовая функция, которая есть в любой ОРМ, просто выполняет запрос и не возвращает результат, можно применять параметры. \
-как правило применяется при старте приложения, после инициализации конфигурации, или после создания таблицы.
+This is a standard function found in any ORM; it simply executes the query and doesn't return a result. Parameters can be applied. \
+It is typically used at application startup, after configuration initialization, or after table creation.
 ```java
 ISession session = Configure.getSession();
 session.executeSQL("CREATE INDEX IF NOT EXISTS test_name ON 'MyTable' ('name');",null);
@@ -736,16 +619,16 @@ session.executeSQL("CREATE INDEX IF NOT EXISTS test_name ON 'MyTable' ('name');"
 #### < T > boolean any(@NonNull Class<T> aClass, String where, Object... parameters) <a name="any"></a>
 #### < T > boolean any(@NonNull Class<T> aClass)
 
-Это типовые функции, которые есть в любой ОРМ, позволяют проверить существуют ли записи в таблице, без условия и с условием.
+These are standard functions found in any ORM; they allow you to check whether records exist in a table, both conditionally and unconditionally.
 ```java
 ISession session = Configure.getSession();
-boolean  b=session.any(MyTable.class," name is null");
+boolean b=session.any(MyTable.class," name is null");
 assertFalse(b);
 ```
 
 #### boolean tableExists(@NonNull Class<T> aClass) <a name="tableExists"></a>
 #### boolean tableExists(@NonNull String tableName)
-Проверяет базу данных на существование таблицы. Если таблица найдена возвращает true, если нет - false.
+Checks the database for the existence of a table. If the table is found, returns true; otherwise, false.
 getTableName
 ```java
 Isession session = Configure.getSesion();
@@ -753,42 +636,7 @@ boolean exist = session.tableExists(MyTable.class);
 exist = session.tableExists(session.getTableName(MyTable.class));
 ```
 #### < T > String getTableName(@NonNull Class<T> aClass) <a name="getTableName"></a>
-Возвращает название таблицы, ассоциированное с типом класса.
-```java
-Isession session = Configure.getSesion();
-String sql="SELCT * FROM "+session.getTableName(MyTable.class);
-```
-
-#### < T > void  createTable(@NonNull Class<T> aClass) throws Exception <a name="createTable"></a>
-Создает таблицу в базе данных, если таблица существует или нарушена логика построения - выбрасывает ошибку.
-```java
-Isession session = Configure.getSesion();
-session.createTable(MyTable.class);
-```
-#### < T > void createTableIfNotExists(@NonNull Class<T> aClass) throws Exception <a name="createTableIfNotExists"></a>
-Создает таблицу в базе данных, если нарушена логика построения - выбрасывает ошибку.
-
-```java
-Isession session = Configure.getSesion();
-session.createTableIfNotExists(MyTable.class);
-```
-#### < T > void dropTableIfExists(@NonNull Class<T> aClass) <a name="dropTableIfExists"></a>
-#### void dropTableIfExists(@NonNull String tableName)
-Удаляет таблицу если она существует.
-```java
-Iession session = Configure.getSesion();
-session.dropTableIfExists(MyTable.class);
-String tableName=session.getTableName(MyTable.class);
-session.dropTableIfExists(fableName);
-```
-####  String getPath() <a name="getPath"></a>
-Возвращает полный путь к файлу базы данных.
-
-#### boolean IsAlive() <a name="IsAlive"></a>
-Проверяет, зарыта ли сессия?
-#### SQLiteDatabase SqLiteDatabaseForWritable() <a name="SqLiteDatabaseForWritable"></a>
-Получает объект SQLiteDatabase в контексте сессии, через него можно управлять базой данных минуя орм.\
-Пример вставки строки:
+Returns the name of the table associated
 ```java
  @MapTable
 static class TableMain {
@@ -826,8 +674,9 @@ list.forEach(tableCustom -> {
 ```
 
 #### SQLiteDatabase SqLiteDatabaseForReadable() <a name="SqLiteDatabaseForReadable"></a>
-Получает объект SQLiteDatabase в контексте сессии, через него можно управлять базой данных минуя орм.\
-Пример получения курсора на выборку с условием:
+Obtains a SQLiteDatabase object in the session context. This object can be used to manage the database without using the ORM.
+
+Example of obtaining a cursor for a conditional selection:
 ```java
     @MapTable
     static class TableUser {
@@ -882,32 +731,31 @@ list.forEach(tableCustom -> {
         assertTrue(list.size()==5);
     }
 ```
-####  < T > ContentValues getContentValues(@NonNull T item)  <a name="getContentValues"></a>
-Получение объекта ```ContentValues``` . Тип ```item``` должен реализовывать аннотации маппинга. \
-Объект ```ContentValues``` получает данные по всем полям ассоциированных с таблицей.
+#### < T > ContentValues  getContentValues(@NonNull T item) <a name="getContentValues"></a>
+Gets a ```ContentValues``` object. The ```item``` type must implement mapping annotations. \
+The ```ContentValues``` object gets data for all fields associated with the table.
 ```java
 ISession session=Configure.getSession();
-ContentValues contentValues=sesssion.getContentValues(new MyTable);
+ContentValues  contentValues=sesssion.getContentValues(new MyTable);
 ```
 
+#### < T > ContentValues  getContentValuesForUpdate(@NonNull Class<T> aClass,PairColumnValue columnValues) <a name="getContentValuesForUpdate"></a>
+Gets a ```ContentValues``` object. The ```item``` type must implement mapping annotations.
 
-#### < T > ContentValues getContentValuesForUpdate(@NonNull Class<T> aClass,PairColumnValue columnValues) <a name="getContentValuesForUpdate"></a>
-Получение объекта ```ContentValues``` . Тип ```item``` должен реализовывать аннотации маппинга. \
-Объект ```ContentValues``` получает данные по всем полям введенных пользователем в PairColumnValue, как правило, может использоваться
-при обновлении записи в таблице по условию равенства первичного ключа.
+The ```ContentValues``` object retrieves data for all fields entered by the user in PairColumnValue. Typically, it can be used
+when updating a table record based on primary key equality.
 ```java
 ISession session=Configure.getSession();
-ContentValues  contentValues =session.getContentValuesForUpdate(TableUser.class,new PairColumnValue()
-                .put("name","newName")
-                .put("age",20)
-                .put("email","ion100@df.com"));
+ContentValues  contentValues  = session.getContentValuesForUpdate(TableUser.class,new PairColumnValue()
+.put("name","newName")
+.put("age",20)
+.put("email","ion100@df.com"));
 ```
 
-####  < T > int save(@NonNull T item) <a name="save"></a>
-Этот метод может применяться для вставки или обновления объекта ассоциированного со строкой таблицы, класс типа этого объекта
-должен реализовывать класс ```Prsistent```, орм сама решает, вставлять объект или обновлять. \
-Поле: ```boolean isPersistent;``` орм заполняет сама(вставка, обновление, извлечение)
-
+#### < T > int save(@NonNull T item) <a name="save"></a>
+This method can be used to insert or update an object associated with a table row. The class of this object's type
+must implement the ```Prsistent``` class. The ORM automatically decides whether to insert or update the object. \
+Field: ```boolean isPersistent;``` The ORM automatically populates this field (insert, update, retrieve).
 ```java
 
 
@@ -935,446 +783,173 @@ tableUser,age=30;
 session.save(tableUser);//update
 ```
 #### < T > T objectFiller(Class<T> aClass, Cursor cursor) throws Exception <a name="objectFiller"></a>
-Вспомогательный метод, применяется при обходе курсора, возвращает заполненный из курсора объект. \
-Класс типа объекта может быть произвольным типом, или типом ассоциированным с таблицей, условие: название полей типа, или колонок таблицы (аннотации) \
-должны совпадать с названием колонок в строке Sql запроса на выборку. \
-Тип должен иметь открытый конструктор без параметров. Возможна ошибка при создании типа и при приведении полей. \
+Helper method used when traversing a cursor; returns the object filled from the cursor. \
+The object type class can be any type, or a type associated with a table. The following condition applies: the names of the type fields or table columns (annotations) \
+must match the names of the columns in the SQL query string. \
+The type must have a public, parameterless constructor. An error may occur when creating the type or when casting fields. \
 
-Пример:
-```java 
+Example:
+```java
 @MapTable
-class TableUser { 
-    @MapPrimaryKey
-    public int id;
-    @MapColumn
-    String name="name";
-    @MapColumn
-    int age=18;
-    @MapColumn
-    String email="ion@qw.com";
+class TableUser {
+@MapPrimaryKey
+public int id;
+@MapColumn
+String name="name";
+@MapColumn
+int age=18;
+@MapColumn
+String email="ion@qw.com";
 }
-class TestFillingPart {
-    public String name;
-    public int age;
+class TestFillingPart { 
+public String name; 
+public int age;
 }
 
 ISession session = Configure.getSession();
-for (int i = 0; i < 5; i++) {
-    session.insert(new TableUser());
+for (int i = 0; i < 5; i++) { 
+session.insert(new TableUser());
 }
 List<TestFillingPart> list=new ArrayList<>();
 var sql="select name, age from "+session.getTableName(TableUser.class)+";";
-      
-try (Cursor cursor = session.execSQLRaw(sql)) {
-    
-    if (cursor.moveToFirst()) {
-        do {
-                   TestFillingPart userPart=  session.objectFiller(TestFillingPart.class, cursor);
-                    list.add(userPart);
-        } while (cursor.moveToNext());
-    }
+
+try (Cursor cursor = session.execSQLRaw(sql)) { 
+
+if (cursor.moveToFirst()) { 
+do { 
+TestFillingPart userPart= session.objectFiller(TestFillingPart.class, cursor); 
+list.add(userPart); 
+} while (cursor.moveToNext()); 
+}
 }catch (Exception e){
-    throw new RuntimeException(e);
+throw new RuntimeException(e);
 }
 ```
 
 #### < T > void objectFiller(Cursor cursor, T instance) throws Exception
-Вспомогательный метод, применяется при обходе курсора, заполняет из курсора ранее созданный объект. \
-Класс типа объекта может быть произвольным типом или типом, ассоциированным с таблицей, единственное условие: название полей типа, или колонок таблицы (аннотации)
-должны совпадать с названием колонок в строке Sql запроса на выборку.
-Возможна ошибка при приведении типа полей с полученным типом из курсора.\
+Helper method used when traversing a cursor; fills a previously created object from the cursor. \
+The object type class can be any type or a type associated with a table. The only requirement is that the names of the type fields or table columns (annotations)
+must match the names of the columns in the SQL query string.
+An error may occur when casting the field type to the type obtained from the cursor. \
 
-Пример:
-```java 
+Example:
+```java
 @MapTable
-class TableUser { 
-    @MapPrimaryKey
-    public int id;
-    @MapColumn
-    String name="name";
-    @MapColumn
-    int age=18;
-    @MapColumn
-    String email="ion@qw.com";
+class TableUser {
+@MapPrimaryKey
+public int id;
+@MapColumn
+String name="name";
+@MapColumn
+int age=18;
+@MapColumn 
+String email="ion@qw.com";
 }
-class TestFillingPart {
-    public String name;
-    public int age;
+class TestFillingPart { 
+public String name; 
+public int age;
 }
 
 ISession session = Configure.getSession();
-for (int i = 0; i < 5; i++) {
-    session.insert(new TableUser());
+for (int i = 0; i < 5; i++) { 
+session.insert(new TableUser());
 }
 List<TestFillingPart> list=new ArrayList<>();
 var sql="select name, age from "+session.getTableName(TableUser.class)+";";
-      
-try (Cursor cursor = session.execSQLRaw(sql)) {
-    
-    if (cursor.moveToFirst()) {
-        do {
-                   TestFillingPart testFillingPart=new TestFillingPart();
-                    session.objectFiller(cursor,testFillingPart);
-                    list.add(userPart);
-        } while (cursor.moveToNext());
-    }
+
+try (Cursor cursor = session.execSQLRaw(sql)) { 
+
+if (cursor.moveToFirst()) { 
+do { 
+TestFillingPart testFillingPart=new TestFillingPart(); 
+session.objectFiller(cursor,testFillingPart); 
+list.add(userPart);
+} while (cursor.moveToNext());
+}
 }catch (Exception e){
-    throw new RuntimeException(e);
+throw new RuntimeException(e);
 }
 ```
 ### interface IEventOrm <a name="IEventOrm"></a>
-Классы типов, которые реализуют этот интерфейс, могут получать вызовы при манипуляции данными таблицы на клиенте. \
-Через этот вызов, можно осуществлять контроль за действием и состоянием объекта в контексте модификации таблицы.
+Type classes that implement this interface can receive calls when manipulating table data on the client. \
+Through this call, you can control the action and state of an object in the context of table modification.
 ```java
 class TableActionOrm implements IEventOrm {
-    @MapPrimaryKey
-    public UUID id=UUID.randomUUID();
-    @MapColumn
-    public String name;
-    public int action;
-    
-    @Override
-    public void beforeUpdate() {
-    }
+@MapPrimaryKey
+public UUID id=UUID.randomUUID();
+@MapColumn
+public String name;
+public int action;
 
-    @Override
-    public void afterUpdate() {
-    }
+@Override
+public void beforeUpdate() {
+}
 
-    @Override
-    public void beforeInsert() {
-    }
+@Override
+public void afterUpdate() {
+}
 
-    @Override
-    public void afterInsert() {
-    }
+@Override
+public void beforeInsert() {
+}
 
-    @Override
-    public void beforeDelete() {
-    }
+@Override
+public void afterInsert() {
+}
 
-    @Override
-    public void afterDelete() {
-    }
+@Override
+public void beforeDelete() {
+}
+
+@Override
+public void afterDelete() {
+}
 }
 ```
 
 ### interface IUserType <a name="IUserType"></a>
 
-Если поля класса являются типом, который реализует этот интерфейс, то это поле размещается  в таблице  как  строковое поле. \
-Контроль за формирования строки и заполнения тела объекта из строки, реализует пользователь.
+If the class fields are a type that implements this interface, then this field is placed in the table as a string field. \
+The user controls how the string is formed and how the object body is populated from the string.
 
 ```java
 public class UserClass implements IUserType
 {
-    public String name;
-    public int age;
-    @Override
-    public void initBody(String str) {
-        Gson gson=new Gson();
-        UserClass inner= gson.fromJson(str, UserClass.class);
-        name=inner.name;
-        age=inner.age;
-    }
-    @Override
-    public String getString() {
-        Gson gson=new Gson();
-       return gson.toJson(this);
-    }
+public String name;
+public int age;
+@Override
+public void initBody(String str) {
+Gson gson=new Gson();
+UserClass inner = gson.fromJson(str, UserClass.class);
+name = inner.name;
+age = inner.age;
 }
-
-
+@Override
+public String getString() {
+Gson gson = new Gson();
+return gson.toJson(this);
+}
+}
 
 @MapTableName("user_23")
 public class TableUser {
-    @MapPrimaryKeyName("_id")
-    public int id;
+@MapPrimaryKeyName("_id")
+public int id;
 
-    @MapColumnName("user")
-    public UserClass userClass;
+@MapColumnName("user")
+public UserClass userClass;
 
-    @MapColumn
-    @MapColumnType("TEXT NOT NULL UNIQUE")
-    public String address;
+@MapColumn
+@MapColumnType("TEXT NOT NULL UNIQUE")
+public String address;
 }
 ```
 
 ### Fluent Interface <a name="Fluent"></a>
-На основе интерфейса ```ISession``` создан интерфейс обертка ```IQueryable```, позволяет формировать запросы цепочкой методов. \
-Может кому то покажется удобным, он типичный, как у всех орм, стоит отметить несколько моментов: \
-При использовании ```rawSqlSelect``` можно делать выборку не только по типам, чьи классы отмечены аннотацией,
-но и по произвольным классам с отрытым конструктором без параметра. Главное, что бы совпадали названия полей с полями выборки.
-И так же можно производить итерация по курсору, без создания списка.\
-При применениях перегрузки ```toString()``` можно посмотреть запрос в текстовом виде. \
-Примеры реализации:
-```java
-    @MapTable
-    class Master {
-    
-    @MapPrimaryKey
-    public int id;
-    
-    @MapColumn
-    public int age=10;
-    
-    @MapColumn
-    public String name="name";
-    
-    @MapColumn
-    public LocalDateTime dateTime = LocalDateTime.now().minusDays(1);
-    }
-    
-    class PartialMaster {
-        public int id;
-        
-        public int age;
-    }
-
-try (ISession session = Configure.getSession()) {
-    session.query(Master.class).dropTableIfExists();
-    session.query(Master.class).createTable();
-
-    List<Master>  list=new ArrayList<>(20);
-    for (int i = 0; i < 20; i++) {
-        Master master=new Master();
-        master.age=i;
-        master.dateTime=LocalDateTime.now().plusDays(i);
-        master.name="name"+i;
-        list.add(master);
-
-    }
-    session.insertBulk(list);
-
-    List<PartialMaster> listT=session.query(PartialMaster.class).rawSqlSelect("select id age from "+session.getTableName(Master.class)).toList();
-    assert listT.size()==20;
-
-    List<Master> listT3=session.query(Master.class).rawSqlSelect("select * from "+session.getTableName(Master.class))
-        .where("name not null").where("age > ?",-1).orderBy("name").toList();
-    assert listT3.size()==20;
-
-    String sql= session.query(Master.class)
-        .rawSqlSelect("select * from "+session.getTableName(Master.class))
-        .where("name not null")
-        .where("age > ?",-1)
-        .orderBy("name").toString();
-    Log.i("____sql____",sql);
-
-    session.query(PartialMaster.class).rawSqlSelect("select * from "+session.getTableName(Master.class))
-        .where("name not null").orderBy("age")
-        .iterator(master -> Log.i("____age_____",String.valueOf(master.age)));
-
-    List<Integer> integers=new ArrayList<>();
-    session.query(Master.class).where(" name not null").iterator(master -> integers.add(master.age));
-    assert integers.size()==20;
-
-    int count= session.query(Master.class).where("name not null").where("age > ? ",5).orderBy("mame").count();
-    assert count==14;
-
-    var o=session.query(Master.class)
-        .where(" name = ?","name5")
-        .where("age==?",5)
-        .orderBy("name")
-        .orderBy("age")
-        .limit(10).toList();
-    assert o.size()==1;
-
-    o=session.query(Master.class).limitOffSet(3,5).toList();
-    assert o.size()==3;
-
-    var r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(5)).firstOrDefault();
-    assert r!=null;
-
-    r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(50)).firstOrDefault();
-    assert r==null;
-    r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(5)).singleOrDefault();
-    assert r==null;
-    //r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(50)).single(); //Error
-
-    var t=session.query(Master.class).groupBy("name");
-    assert t.size()==20;
-
-    var names=session.query(Master.class).distinctBy("name");
-    assert t.size()==20;
-
-    String tempSql="select * from "+session.getTableName(Master.class);
-    var listTemp=session.query(PartialMaster.class).rawSqlSelect(tempSql).where("age > ?",-1).toList();
-    assert listTemp.size()==20;
-
-    var any=session.query(Master.class).where("age < 0").any();
-    assert any==false;
-
-}
-```
-
-
-### interface IUserType
-### Маркировка объектов через наследование class Persistent <a name="Persistent"></a>
-Одна из проблем при создании орм, сохранять сведения об объекте, в нашем случае это сведения
-откуда получен объект, из базы или нет, в разных орм - разный подход, например создание прокси объекта на основе данного типа (java, C#), маркировка объекта специальным атрибутом(C#)и т.д.
-В нашем случае, это наследования объекта, описывающего табличную сущность, от class Persistent.
-В этом классе всего одно булево поле ``` boolean isPersistent;```, которое характеризует происхождение объекта (true-получен из базы false-создан на клиенте и в базе не сохранен)
-на основе этого можно принимать решение, что делать с объектом при помещении его в метод ```save```, вставлять или обновлять, в то же время, это поле решает:
-выкинуть ли исключение при вставке в базу объекта полученного ранее из базы, удаление или обновление локально созданного объекта.\
-Применение этого наследования не догма, вы можете отказаться, и сами следить откуда получен объект, в этом случае - вы не сможете применять метод ```save```.
-
-#### Получение типизированных списков по не полной записи из таблицы <a name="312"></a>
-Наверное самый простой способ решить эту проблему, через использование суб классов. \
-Давайте разложим целевой класс на суб классы:
-```java
-
-@MapTableName("main")
-@MapTableReadOnly
-class BaseMain{
-    @MapPrimaryKeyName("_id")
-    int id;
-
-}
-@MapTableReadOnly
-class SubMain extends BaseMain {
-    @MapColumn
-    public String name;
-    @MapColumn
-    public int age;
-}
-class TableMain extends SubMain {
-    @MapColumn
-    public String email;
-}
-
-ISession session=Configure.getSession();
-try {
-    session.dropTableIfExists(TableMain.class);
-    session.createTableIfNotExists(TableMain.class);
-} catch (Exception e) {
-    throw new RuntimeException(e);
-}
-for (int i = 0; i < 5; i++) {
-    TableMain main=new TableMain();
-    main.age=10;
-    main.name="Leo"+i;
-    main.email="leo123@.leo.com";
-    session.insert(main);
-}
-var list1= session.getList(TableMain.class,"1 order by _id");
-var list2= session.getList(SubMain.class,"1 order by _id");
-var list3= session.getList(BaseMain.class,"1 order by _id");
-assertTrue((list1.size()+list2.size()+list3.size())==5*3);
-for (int i = 0; i <5; i++) {
-    assertEquals(list1.get(i).id,list2.get(i).id);
-    assertEquals(list2.get(i).id,list3.get(i).id);
-    assertEquals(list1.get(i).age,list2.get(i).age);
-    assertEquals(list1.get(i).name,list2.get(i).name);
-}
-/*When attempting to modify, an error occurs because the class is closed with the annotation:  @MapTableReadOnly */
-//session.insert(list2.get(1)); //error table read only
-//session.update(list2.get(1)); //error table read only
-//session.delete(list2.get(1)); //error table read only
-//session.deleteRows(SubMain.class);//error table read only
-//session.updateRows(SubMain.class,new PairColumnValue().put("name","newName"),null);//error table read only
-```
-> [!NOTE]\
-> Обратите внимание, все суб классы я пометил аннотацией: ```@MapTableReadOnly```.
-> Это предохраняет мою таблицу, если я буду модифицировать таблицу через объекты этих суб классов или указывая тип суб классов. \
-> При попытке модификации таблицы - я получу ошибку.
-
-Еше один способ, получение типизированного списка через метод [getListFree](#getListFree), нужно подготовить запрос на выборку,
-это может быть JOIN или UNION SELECT, основное требование, что бы целевой тип имел поля, с названием,  совпадающими с полями запроса,
-или поля помеченные аннотацией "@MapColumnName". \
-Ну и как последний вариант, получить Cursor, и обходить его самому.
-При обходе курсора можно использовать методом заполнения: [objectFiller](#objectFiller)
-Стоит остановиться на применений в функции параметра запроса (where) и параметра - Object... parameters.
-В параметре where писать слово  ```Where``` не нужно, в случае - если where не нужен, можно поставить:1 или 1=1. \
-Пример: "id= 2", "id=2 and name not null order by name LIMIT 10", "1 LIMIT 10", "1 order by name" и т.д. \
-параметр parameters, транслируется в массив строк, очередность записи,
-должна соответствовать очередность применения параметра (?) в строке условия запроса.
-
-### Асинхронные операции <a name="async"></a>
-В Fluent методах интерфейса IQueryable реализованы обертки ```CompletableFuture``` для асинхронного обращения к базе данных,
-без блокировки основного потока, реализованы не все методы, а наиболее востребованные. Обращение типичное.
-Примеры как с ними работать есть в Javadoc архиве.
-Базовый пример:
-```java
-java
-import android.os.Handler;
-import android.os.Looper;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-// Создаем собственный пул потоков для фоновых задач
-ExecutorService executor = Executors.newFixedThreadPool(4);
-
-public void fetchDataAndDisplay() {
-    // 1. Запускаем асинхронную задачу в нашем пуле потоков
-    CompletableFuture.supplyAsync(() -> {
-        // Имитация длительной операции (например, сетевого запроса)
-        try {
-            Thread.sleep(2000);
-            return "Загруженные данные";
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(e);
-        }
-    }, executor)
-    // 2. Обрабатываем результат после завершения первой задачи
-    .thenApplyAsync(result -> {
-        // Имитация обработки данных
-        return "Обработанные данные: " + result;
-    }, executor)
-    // 3. Выполняем действия с результатом в главном потоке
-    .thenAcceptAsync(finalResult -> {
-        // Обновление UI-компонента
-        updateTextView(finalResult);
-    }, command -> new Handler(Looper.getMainLooper()).post(command));
-}
-
-// Метод для обновления UI, должен вызываться в главном потоке
-private void updateTextView(String text) {
-    // Здесь код для обновления TextView, ProgressBar и т. д.
-    // textView.setText(text);
-}
-```
-
-### Как подключить к проекту. <a name="312312"></a>
-В корне проекта есть директория: ```aar``` в ней  два файла: ```bitnicorm-release.aar``` и ```sources.jar``` - (таблицы описания справки)
-Что бы подключить к проекту: создайте директорию ```libs```
-```markdown
-app/
-├─ libs/
-│   ├─ bitnicorm-release.aar
-│   └─ sources.jar
-├─ build.gradle.kts
-│
-└─../ settings.gradle.kts
-
-```
-В файле: ```settings.gradle.kts``` укажите откуда брать подсказки.
-```markdown
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        flatDir {
-            dirs("app/libs")
-        }
-    }
-}
-```
-В файле ```build.gradle.kts```
-```markdown
-dependencies {
-
-   ......................
-   .......................
-
-    implementation(files("libs/bitnicorm-release.aar"))
-    implementation(files("libs/sources.jar"))
-    //implementation("com.google.code.gson:gson:2.13.2") по желанию для использования аннотации @MapColumnJson
-}
-```
-Так же в корне проекта есть архив rar ```javadoc.rar``` это папка с javadoc
-
-
+The ```IQueryable``` wrapper interface is based on the ```ISession``` interface, allowing you to construct queries using a chain of methods. \
+While this may seem convenient to some, it's typical for all ORM, but it's worth noting a few points: \
+When using ```rawSqlSelect```, you can select not only types whose classes are marked with an annotation,
+but also arbitrary classes with a public constructor without a parameter. The main thing is that the field names match
 
 
 

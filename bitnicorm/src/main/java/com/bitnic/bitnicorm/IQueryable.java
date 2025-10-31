@@ -593,9 +593,9 @@ public interface IQueryable<T> {
      * @return T object
      *
      * <pre>
+     *     Get an Object from a Database by Primary Key
      * {@code
-     *  session.query(MyTable.class).getByIdAsync(5).thenAcceptAsync(myTable -> {
-     *       binding.textviewFirst.setText(myTable==null?"none":myTable.name);
+     *  MyClass o=session.query(MyTable.class).getById(5);
      * });
      * }
      * </pre>
