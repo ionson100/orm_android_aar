@@ -59,7 +59,7 @@ dependencies {
 //afterEvaluate {
 //
 //    //gradlew assembleRelease
-//    val versionName = "1.2.5"
+//    val versionName = "1.2.6"
 //    val libName = "bitnicorm"
 //
 //    // 🔹 основная задача AAR
@@ -101,7 +101,7 @@ publishing {
 
             groupId = "com.github.ionson100" // 👈 твой GitHub username
             artifactId = "bitnicorm"          // 👈 имя библиотеки
-            version = "1.2.5"                  // 👈 версия тега
+            version = "1.2.6"                  // 👈 версия тега
         }
     }
 }
