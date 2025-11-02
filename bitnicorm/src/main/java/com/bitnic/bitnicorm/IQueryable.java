@@ -11,6 +11,14 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <T> The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
  *           If you use the rawSqlSelect function, the class type can be arbitrary, without annotations.
+ *
+ * <pre>
+ * {@code
+ * ISession session=Configure.getSession();
+ * var list = session.query(MyTable.class).where(" age=?",30).where(" name=?","name").orderBy("name").limit(5).toList();
+ * }
+ * </pre>
+ * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
  */
 public interface IQueryable<T> {
 
@@ -31,6 +39,7 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).where(" age=?",30).where(" name=?","name").orderBy("name").toList();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     IQueryable<T> where(@NonNull String where, Object... parameters);
 
@@ -46,6 +55,7 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).where(" age=?",30).where(" name=?","name").orderBy("name").limit(5).toList();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     IQueryable<T> limit(int limit);
 
@@ -62,6 +72,7 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).where(" age=?",30).where(" name=?","name").orderBy("name").limitOffSet(5,2).toList();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
 
     IQueryable<T> limitOffSet(int rowCount, int offSet);
@@ -78,8 +89,25 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").toList();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     IQueryable<T> orderBy(@NonNull String columnName);
+
+    /**
+     * Adds the ORDER BY parameter to the database query.
+     *
+     * @param columnName the column name
+     * @return the queryable
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * var list = session.query(MyTable.class).where(" age=?",30).orderByDesc("age").toList();
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
+     */
+    IQueryable<T> orderByDesc(@NonNull String columnName);
 
     /**
      * Update queryable.( column, new value)
@@ -94,6 +122,7 @@ public interface IQueryable<T> {
      * var i = session.query(MyTable.class).where(" age=?",30).update("name","newName").update("age",30).updateNow();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     IQueryable<T> update(@NonNull String columnName, Object value);
 
@@ -115,6 +144,7 @@ public interface IQueryable<T> {
      * var user = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").firstOrDefault();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     T firstOrDefault();
 
@@ -124,12 +154,13 @@ public interface IQueryable<T> {
      * @return Object of type T or Exception
      * @throws Exception the exception
      *
-     *                   <pre>
-     *                   {@code
-     *                   ISession session=Configure.getSession();
-     *                   var user = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").first();
-     *                   }
-     *                   </pre>
+     *  <pre>
+     *  {@code
+     *  ISession session=Configure.getSession();
+     *  var user = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").first();
+     *  }
+     *  </pre>
+     *  @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     T first() throws Exception;
 
@@ -144,6 +175,7 @@ public interface IQueryable<T> {
      * var user = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").singleOrDefault();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     T singleOrDefault();
 
@@ -153,12 +185,13 @@ public interface IQueryable<T> {
      * @return Object of type T or Exception
      * @throws Exception the exception
      *
-     *                   <pre>
-     *                   {@code
-     *                   ISession session=Configure.getSession();
-     *                   var user = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").single();
-     *                   }
-     *                   </pre>
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * var user = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").single();
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     T single() throws Exception;
 
@@ -174,6 +207,7 @@ public interface IQueryable<T> {
      * var map = session.query(MyTable.class).groupBy("age");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
 
     Map<Object, List<T>> groupBy(@NonNull String columnName);
@@ -189,6 +223,7 @@ public interface IQueryable<T> {
      * var tableName = session.query(MyTable.class).getTableName();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     String getTableName();
 
@@ -203,6 +238,7 @@ public interface IQueryable<T> {
      * var i = session.query(MyTable.class).where(" age=?",30).deleteRows();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     int deleteRows();
 
@@ -217,6 +253,7 @@ public interface IQueryable<T> {
      * var res = session.query(MyTable.class).tableExists();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     boolean tableExists();
 
@@ -231,6 +268,7 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).where(" age=?",30).orderBy("name").orderBy("age").toList();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     List<T> toList();
 
@@ -246,6 +284,7 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).distinctBy("age");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     List<Object> distinctBy(@NonNull String columnName);
 
@@ -261,6 +300,7 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).select("name");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     List<Object> select(@NonNull String columnName);
 
@@ -273,6 +313,7 @@ public interface IQueryable<T> {
      * var res = session.query(MyTable.class).dropTableIfExists();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void dropTableIfExists();
 
@@ -281,12 +322,13 @@ public interface IQueryable<T> {
      *
      * @throws Exception the exception
      *
-     *                   <pre>
-     *                   {@code
-     *                   ISession session=Configure.getSession();
-     *                   var res = session.query(MyTable.class).createTable();
-     *                   }
-     *                   </pre>
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * var res = session.query(MyTable.class).createTable();
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void createTable() throws Exception;
 
@@ -295,12 +337,13 @@ public interface IQueryable<T> {
      *
      * @throws Exception the exception
      *
-     *                   <pre>
-     *                   {@code
-     *                   ISession session=Configure.getSession();
-     *                   var res = session.query(MyTable.class).createTableIfNotExists();
-     *                   }
-     *                   </pre>
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * var res = session.query(MyTable.class).createTableIfNotExists();
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void createTableIfNotExists() throws Exception;
 
@@ -315,6 +358,7 @@ public interface IQueryable<T> {
      * var res = session.query(MyTable.class).where(" age=?",30).count();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     int count();
 
@@ -329,6 +373,7 @@ public interface IQueryable<T> {
      * var res = session.query(MyTable.class).where(" age=?",30).any();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     boolean any();
 
@@ -345,6 +390,7 @@ public interface IQueryable<T> {
      * var i = session.query(MyTable.class).where(" age=?",30).update("name","newName").update("age",30).updateNow();
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     int updateNow();
 
@@ -366,6 +412,7 @@ public interface IQueryable<T> {
      * });
      * }
      * </pre>
+     *  @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
      void iterator(ITask<T> action);
 
@@ -379,6 +426,7 @@ public interface IQueryable<T> {
      * var list = session.query(MyTable.class).where("age>10").selectExpression("age*10");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     List<Object> selectExpression(String expression);
 
@@ -405,6 +453,7 @@ public interface IQueryable<T> {
      *  });
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<List<T>> toListAsync();
 
@@ -428,6 +477,7 @@ public interface IQueryable<T> {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<List<Object>> selectAsync(@NonNull String columnName);
 
@@ -443,6 +493,7 @@ public interface IQueryable<T> {
      *  });
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<List<Object>> selectExpressionAsync(@NonNull String expression);
 
@@ -460,6 +511,7 @@ public interface IQueryable<T> {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<Boolean> anyAsync();
 
@@ -475,6 +527,7 @@ public interface IQueryable<T> {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<Integer> countAsync();
 
@@ -495,6 +548,7 @@ public interface IQueryable<T> {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<Integer> updateNowAsync();
 
@@ -512,6 +566,7 @@ public interface IQueryable<T> {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<List<Object>> distinctByAsync(@NonNull String columnName);
 
@@ -532,6 +587,7 @@ public interface IQueryable<T> {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<Map<Object, List<T>>> groupByAsync(@NonNull String columnName);
 
@@ -550,6 +606,7 @@ public interface IQueryable<T> {
      *       });
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<T> singleOrDefaultAsync();
 
@@ -567,6 +624,7 @@ public interface IQueryable<T> {
      *       });
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<T> firstOrDefaultAsync();
 
@@ -583,6 +641,7 @@ public interface IQueryable<T> {
      * });
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     CompletableFuture<T> getByIdAsync( @NonNull Object primaryKey);
 
@@ -599,6 +658,7 @@ public interface IQueryable<T> {
      * });
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     T getById( @NonNull Object primaryKey);
 

@@ -29,6 +29,18 @@ import java.util.Map;
 
 /**
  * Root type for working with ORM
+ * <pre>
+ * {@code
+ * new Configure("db.sqlite",3,appContext);
+ * .....
+ * ISession session=Configure.getSession();
+ * session.dropTableIfExists(session.getTableName(MyTable.class));
+ * var res=session.tableExists(MyTable.class);
+ * assertEquals(false,res);
+ * session.close();
+ * }
+ * </pre>
+ * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
  */
 public class Configure implements ISession {
 
@@ -53,15 +65,16 @@ public class Configure implements ISession {
      * @param version      database file version
      * @param context      context App
      *
-     *                     <pre>
-     *                                         {@code
-     *                                          try {
-     *                                            new Configure("db.sqlite",3,appContext);
-     *                                          } catch (Exception e) {
-     *                                             throw new RuntimeException(e);
-     *                                          }
-     *                                         }
-     *                                         </pre>
+     * <pre>
+     * {@code
+     *  try {
+     *    new Configure("db.sqlite",3,appContext);
+     *  } catch (Exception e) {
+     *     throw new RuntimeException(e);
+     *  }
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     public Configure(String dataBaseName, int version, Context context) {
         InitCtor(dataBaseName, version, context);
@@ -75,17 +88,18 @@ public class Configure implements ISession {
      * @param context      context App
      * @param classList    list of DTO types, upon initialization, tables are automatically created based on the type if the table does not exist
      * @param isWriteLog   force logging, only for debugging the application
-     *                     <pre>
-     *                                         {@code
-     *                                          List<Class> classList=new ArrayList<>();
-     *                                          classList.add(MyTable.class);
-     *                                          try {
-     *                                            new Configure("db.sqlite",3,appContext,classList,true);
-     *                                          } catch (Exception e) {
-     *                                             throw new RuntimeException(e);
-     *                                          }
-     *                                         }
-     *                                         </pre>
+     *<pre>
+     * {@code
+     *  List<Class> classList=new ArrayList<>();
+     *  classList.add(MyTable.class);
+     *  try {
+     *    new Configure("db.sqlite",3,appContext,classList,true);
+     *  } catch (Exception e) {
+     *     throw new RuntimeException(e);
+     *  }
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     @SuppressLint("NewApi")
     public Configure(String dataBaseName, int version, Context context, List<Class> classList, boolean isWriteLog) {
@@ -118,15 +132,19 @@ public class Configure implements ISession {
      * @param isWriteLog   force logging, only for debugging the application
      *
      *
-     *                     <pre>
-     *                                         {@code
-     *                                         try {
-     *                                           new Configure("db.sqlite",3,appContext,true);
-     *                                         } catch (Exception e) {
-     *                                          throw new RuntimeException(e);
-     *                                         }
-     *                                         }
-     *                                         </pre>
+     * <pre>
+     * {@code
+     * new Configure("db.sqlite",3,this,true);
+     * ......
+     * ISession session=Configure.getSession();
+     * session.dropTableIfExists(session.getTableName(MyTable.class));
+     * var res=session.tableExists(MyTable.class);
+     * assertEquals(false,res);
+     * session.close();
+     * }
+     * </pre>
+     *
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     public Configure(String dataBaseName, int version, Context context, boolean isWriteLog) {
         Configure.IsWriteLog = isWriteLog;
@@ -146,8 +164,15 @@ public class Configure implements ISession {
 
     /**
      * Getting the session object, now you can do something
-     *
      * @return object {@link ISession}
+     * <pre>
+     * {@code
+     *   ISession session=Configure.getSession();
+     *   List<MyTable> list=session.query(MyTable.class).toList()
+     *   }
+     * </pre>
+     *
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     public static ISession getSession() {
         Configure configure= new Configure();
@@ -167,6 +192,7 @@ public class Configure implements ISession {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     public static ISession getSessionAutoClose() {
         Configure configure= new Configure();

@@ -13,6 +13,16 @@ import java.util.Map;
 
 /**
  * Database work unit
+ * <pre>
+ * {@code
+ * ISession session=Configure.getSession();
+ * session.dropTableIfExists(session.getTableName(MyTable.class));
+ * var res=session.tableExists(MyTable.class);
+ * assertEquals(false,res);
+ * session.close()
+ * }
+ * </pre>
+ * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
  */
 public interface ISession extends Closeable {
 
@@ -43,6 +53,7 @@ public interface ISession extends Closeable {
      * var res=session.update(o);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> int update(@NonNull T item);
 
@@ -78,6 +89,7 @@ public interface ISession extends Closeable {
      * var res=session.update(o,"last_update = ?",o.last_update);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> int update(@NonNull T item,String appendWhere, Object... parameters);
 
@@ -106,6 +118,7 @@ public interface ISession extends Closeable {
      * var res=session.update(o);
      * }
      * </pre>
+     *  @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> void insert(@NonNull T item);
 
@@ -134,6 +147,7 @@ public interface ISession extends Closeable {
      * session.insertBulk(list);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> void insertBulk(@NonNull List<T> tList);
 
@@ -158,6 +172,7 @@ public interface ISession extends Closeable {
      * session.insertBulk(new SimpleTable("name:"+1),new SimpleTable("name:"+2));
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> void insertBulk(@NonNull T... object);
 
@@ -188,6 +203,7 @@ public interface ISession extends Closeable {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> int delete(@NonNull T item);
 
@@ -222,6 +238,7 @@ public interface ISession extends Closeable {
      * session.updateRows(SimpleTable.class,new PairColumnValue().put("myName","newName"),null);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> int updateRows(@NonNull Class<T> aClass, @NonNull PairColumnValue columnValues, String where, Object... parameters);
 
@@ -255,6 +272,7 @@ public interface ISession extends Closeable {
      * var list=session.toList(SimpleTable.class,"name = ?","name1");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> List<T> getList(@NonNull Class<T> aClass, String where, Object... parameters);
 
@@ -297,6 +315,7 @@ public interface ISession extends Closeable {
      * //select all rows
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> List<T> getList(@NonNull Class<T> aClass);
 
@@ -325,6 +344,7 @@ public interface ISession extends Closeable {
      * var count =session.executeScalar("Select count(*) from 'SimpleTable' where name = ?","name1");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     Object executeScalar(@NonNull String sql, Object... parameters);
 
@@ -352,6 +372,7 @@ public interface ISession extends Closeable {
      * var id =session.executeScalar(""SELECT last_insert_rowid();"");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     Object executeScalar(@NonNull String sql);
 
@@ -367,6 +388,7 @@ public interface ISession extends Closeable {
      * session.execSQL("CREATE INDEX IF NOT EXISTS test_name ON 'test' ('name');");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void executeSQL(@NonNull String sql, Object... parameters);
 
@@ -393,6 +415,7 @@ public interface ISession extends Closeable {
      * Cursor cursor= execSQLRawInner("select * from "+ session.getTableName(SimpleTable.class));
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     Cursor execSQLRaw(@NonNull String sql, Object... objects);
 
@@ -420,6 +443,7 @@ public interface ISession extends Closeable {
      * Cursor cursor= execSQLRawInner("select * from "+ session.getTableName(SimpleTable.class));
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> String getTableName(@NonNull Class<T> aClass);
 
@@ -443,6 +467,7 @@ public interface ISession extends Closeable {
      * assertEquals(10,res);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void beginTransaction();
 
@@ -468,6 +493,7 @@ public interface ISession extends Closeable {
      * assertEquals(10,res);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void commitTransaction();
 
@@ -491,6 +517,7 @@ public interface ISession extends Closeable {
      * assertEquals(10,res);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void endTransaction();
 
@@ -513,6 +540,7 @@ public interface ISession extends Closeable {
      * }catch(Exception e){}
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
      */
     <T> boolean tableExists(@NonNull Class<T> aClass);
@@ -521,6 +549,16 @@ public interface ISession extends Closeable {
      *  Checks if a table exists in the database.
      * @param tableName  particular table name
      * @return true - is existing, false - not exists
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * session.dropTableIfExists(session.getTableName(MyTable.class));
+     * var res=session.tableExists(MyTable.class);
+     * assertEquals(false,res);
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     boolean tableExists(@NonNull String tableName);
 
@@ -544,6 +582,7 @@ public interface ISession extends Closeable {
      * assertEquals(0,list.size());
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
      */
     <T> int deleteRows(@NonNull Class<T> aClass);
@@ -572,6 +611,7 @@ public interface ISession extends Closeable {
      * assertEquals(0,list.size());
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
 
      */
@@ -588,6 +628,7 @@ public interface ISession extends Closeable {
      * assertEquals(false,res);
      * }
      * </pre>
+     *  @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     void dropTableIfExists(@NonNull String tableName);
 
@@ -605,6 +646,7 @@ public interface ISession extends Closeable {
      * assertEquals(false,res);
      * }
      * </pre>
+     *  @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> void dropTableIfExists(@NonNull Class<T> aClass);
 
@@ -614,7 +656,7 @@ public interface ISession extends Closeable {
      *               This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *               and a public field marked with the primary key annotation.
      * @param <T>    The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     * @throws Exception
+     * @throws Exception error create table
      * <pre>
      * {@code
      * @MapTable
@@ -628,8 +670,8 @@ public interface ISession extends Closeable {
      *
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
-     * @exception Error creating table
      */
     <T> void  createTable(@NonNull Class<T> aClass) throws Exception;
 
@@ -641,6 +683,14 @@ public interface ISession extends Closeable {
      *               This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *               and a public field marked with the primary key annotation.
      * @throws Exception Error creating table
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * session.createTableIfNotExists(MuUser.class);
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
    <T> void createTableIfNotExists(@NonNull Class<T> aClass) throws Exception;
 
@@ -648,6 +698,14 @@ public interface ISession extends Closeable {
      * Gets the path to the database file.
      *
      * @return string as the path to the database file.
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * String patch =session.getPath();
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     String getPath();
 
@@ -677,8 +735,11 @@ public interface ISession extends Closeable {
      * @return total number of records in the table
      * <pre>
      * {@code
+     * ISession session=Configure.getSession();
+     * int count=session.count(MyUser.class);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
      */
     <T, r> r count(@NonNull Class<T> aClass);
@@ -697,8 +758,11 @@ public interface ISession extends Closeable {
      * @return number of records in a table with selection condition
      * <pre>
      * {@code
+     * ISession session=Configure.getSession();
+     * int count=session.count(MyUser.class," name not null and age > ?",20);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
      */
     <T, r> r count(@NonNull Class<T> aClass, String where, Object... parameters);
@@ -723,6 +787,7 @@ public interface ISession extends Closeable {
      * assertEquals(false,res2);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
      */
     <T>boolean  any(@NonNull Class<T> aClass);
@@ -752,6 +817,7 @@ public interface ISession extends Closeable {
      * assertEquals(false,res2);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
      */
     <T> boolean any(@NonNull Class<T> aClass, String where, Object... parameters);
@@ -787,6 +853,7 @@ public interface ISession extends Closeable {
      * var res=session.update(o);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      *
      */
     <T> T firstOrDefault(@NonNull Class<T> aClass, String where, Object... parameters);
@@ -821,6 +888,7 @@ public interface ISession extends Closeable {
      * } catch (Exception e) {}
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> T first(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception;
 
@@ -834,7 +902,9 @@ public interface ISession extends Closeable {
      *                and parameter values are entered into the object collection in the order they appear in the query.
      * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
-     * @throws Exception <pre>
+     * @return  parameters or Exception
+     * @throws Exception   when a record is not found, or more than one is found.
+     * <pre>
      * {@code
      * @MapTable
      * public class SimpleTable {
@@ -854,7 +924,7 @@ public interface ISession extends Closeable {
      * } catch (Exception e) {}
      * }
      * </pre>
-     * @return  parameters or Exception
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> T single(@NonNull Class<T> aClass, String where, Object... parameters) throws Exception;
 
@@ -868,6 +938,8 @@ public interface ISession extends Closeable {
      *                and parameter values are entered into the object collection in the order they appear in the query.
      * @param parameters A array of parameters that replace the `?` symbols in a script, the order of the parameters matches the order of the `?` symbols.
      * @param <T>     The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
+     * @return The first object obtained by the condition, if the object does not exist, will return null
+
      * <pre>
      * {@code
      * @MapTable
@@ -886,7 +958,7 @@ public interface ISession extends Closeable {
      *   // or session.singleOrDefault(SimpleTable.class,"id=?",10);
      * }
      * </pre>
-     * @return The first object obtained by the condition, if the object does not exist, will return null
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> T singleOrDefault(@NonNull Class<T> aClass, String where, Object... parameters);
 
@@ -919,6 +991,7 @@ public interface ISession extends Closeable {
      * List<String>  res=session.getListSelect(SimpleTable.class,"name","name not null");
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T, D> List<D> getListSelect(@NonNull Class<T> aClass, @NonNull String columnName, String where, Object... parameters);
 
@@ -950,6 +1023,7 @@ public interface ISession extends Closeable {
      * List<String>  res=session.getListSelect(" select name from "+ session.getTableName(SimpleTable.class));
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
      <T> List<T> getListSelect(@NonNull String sql, Object... parameters);
 
@@ -1040,13 +1114,27 @@ public interface ISession extends Closeable {
     <T> void objectFiller(Cursor cursor, T instance) throws Exception;
 
 
-    /**
-     /** Entry point to Fluent Interface
+
+     /**
+     Entry point to Fluent Interface
      * @param aClass   Instances of the  represent classes and interfaces in a running Java application.
      *                 This class must be annotated with the @{@link MapTable} or @{@link MapTableName} annotation, have a public parameterless constructor,
      *                 and a public field marked with the primary key annotation.
      * @param <T>  The generic type must represent a class marked with the annotation @{@link MapTable} or @{@link MapTableName}
      * @return IQueryable
+     *
+     * <pre>
+     * {@code
+     * ISession session=Configure.getSession();
+     * var list = session.query(MyTable.class)
+     *     .where(" age=?",30)
+     *     .where(" name=?","name")
+     *     .orderBy("name")
+     *     .limit(5)
+     *     .toList();
+     * }
+     * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> IQueryable<T> query(Class<T> aClass);
 
@@ -1096,6 +1184,7 @@ public interface ISession extends Closeable {
      *  MyTable table = Configure.getSessionAutoClose().getById(5);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     <T> T getById(@NonNull Class<T> aClass, @NonNull Object primaryKey);
 

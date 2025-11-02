@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
  * 'name' TEXT DEFAULT NULL);
  * }
  * </pre>
+ * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
  */
 @Target(value = ElementType.FIELD)
 @Retention(value = RetentionPolicy.RUNTIME)

@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
  * CREATE INDEX index_name on myTableSimple (name);
  * }
  * </pre>
+ * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
  */
 @Target(value = ElementType.TYPE)
 @Retention(value = RetentionPolicy.RUNTIME)

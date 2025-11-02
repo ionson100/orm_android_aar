@@ -41,6 +41,7 @@ package com.bitnic.bitnicorm;
  * }
  * }
  * </pre>
+ * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
  */
 public  interface IEventOrm {
 

@@ -34,6 +34,7 @@ public class PairColumnValue {
      *    1);
      * }
      * </pre>
+     * @see <a href="https://github.com/ionson100/orm_android_aar">Home Page</a>
      */
     public PairColumnValue put(String columnName, Object newValue){
         if(objectMap.containsValue(columnName)){

@@ -56,42 +56,42 @@ dependencies {
         //implementation(files("C:\\Users\\123\\AppData\\Local\\Android\\Sdk\\platforms\\android-36\\android.jar"))
     api(libs.gson)
 }
-afterEvaluate {
-
-    //gradlew assembleRelease
-    val versionName = "1.2.5"
-    val libName = "bitnicorm"
-
-    // 🔹 основная задача AAR
-    val releaseAar = tasks.named("bundleReleaseAar")
-
-    // 🔹 создаём source.jar с тем же именем и версией
-    val sourceJar = tasks.register<Jar>("sourceJar") {
-        group = "build"
-        archiveBaseName.set(libName)
-        archiveVersion.set(versionName)
-        archiveClassifier.set("sources")
-
-        from(android.sourceSets["main"].java.srcDirs)
-        from("src/main/java")
-
-        destinationDirectory.set(file("${layout.buildDirectory.get()}/outputs/aar"))
-    }
-
-    // 🔹 переименовываем AAR после сборки (чтобы версия была в имени)
-    releaseAar.configure {
-        doLast {
-            val outputDir = file("${layout.buildDirectory.get()}/outputs/aar")
-            val originalAar = outputDir.listFiles()?.find { it.name.endsWith(".aar") }
-            if (originalAar != null) {
-                val targetFile = File(outputDir, "$libName-$versionName.aar")
-                originalAar.renameTo(targetFile)
-                println("✅ AAR renamed to: ${targetFile.name}")
-            }
-        }
-        finalizedBy(sourceJar)
-    }
-}
+//afterEvaluate {
+//
+//    //gradlew assembleRelease
+//    val versionName = "1.2.5"
+//    val libName = "bitnicorm"
+//
+//    // 🔹 основная задача AAR
+//    val releaseAar = tasks.named("bundleReleaseAar")
+//
+//    // 🔹 создаём source.jar с тем же именем и версией
+//    val sourceJar = tasks.register<Jar>("sourceJar") {
+//        group = "build"
+//        archiveBaseName.set(libName)
+//        archiveVersion.set(versionName)
+//        archiveClassifier.set("sources")
+//
+//        from(android.sourceSets["main"].java.srcDirs)
+//        from("src/main/java")
+//
+//        destinationDirectory.set(file("${layout.buildDirectory.get()}/outputs/aar"))
+//    }
+//
+//    // 🔹 переименовываем AAR после сборки (чтобы версия была в имени)
+//    releaseAar.configure {
+//        doLast {
+//            val outputDir = file("${layout.buildDirectory.get()}/outputs/aar")
+//            val originalAar = outputDir.listFiles()?.find { it.name.endsWith(".aar") }
+//            if (originalAar != null) {
+//                val targetFile = File(outputDir, "$libName-$versionName.aar")
+//                originalAar.renameTo(targetFile)
+//                println("✅ AAR renamed to: ${targetFile.name}")
+//            }
+//        }
+//        finalizedBy(sourceJar)
+//    }
+//}
 publishing {
     publications {
         create<MavenPublication>("release") {

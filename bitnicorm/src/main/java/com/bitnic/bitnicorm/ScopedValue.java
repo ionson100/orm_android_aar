@@ -62,9 +62,19 @@ class ScopedValue<T> implements IQueryable<T> {
 
     public IQueryable<T> orderBy(@NonNull String columnName) {
         if (this.orderBy.isEmpty()) {
-            this.orderBy = " ORDER BY " + columnName;
+            this.orderBy = " ORDER BY " + columnName+ " ASC";
         } else {
-            this.orderBy += ", " + columnName;
+            this.orderBy += ", " + columnName + " ASC";
+        }
+        return this;
+    }
+
+    @Override
+    public IQueryable<T> orderByDesc(@NonNull String columnName) {
+        if (this.orderBy.isEmpty()) {
+            this.orderBy = " ORDER BY " + columnName+ " DESC";
+        } else {
+            this.orderBy += ", " + columnName+ " DESC";
         }
         return this;
     }

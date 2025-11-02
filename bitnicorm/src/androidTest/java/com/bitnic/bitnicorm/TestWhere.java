@@ -233,4 +233,20 @@ public class TestWhere extends BaseTestClass {
         var list=session.getListSelect("select name from "+session.getTableName(MyTable.class));
         assertTrue(list.size()==10);
     }
+
+    @Test
+    public void  TestOrderBy() throws Exception {
+        initConfig();
+        ISession session = Configure.getSession();
+        session.dropTableIfExists(MyTable.class);
+        session.createTableIfNotExists(MyTable.class);
+        for (int i = 0; i < 10; i++) {
+            MyTable myTable=new MyTable();
+            myTable.age=i;
+            myTable.name="name"+i;
+            session.insert(myTable);
+        }
+        var list=session.query(MyTable.class).orderByDesc("age").orderBy("name").toList();
+        assertTrue(list.size()==10);
+    }
 }
