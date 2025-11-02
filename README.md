@@ -947,9 +947,281 @@ public String address;
 
 ### Fluent Interface <a name="Fluent"></a>
 The ```IQueryable``` wrapper interface is based on the ```ISession``` interface, allowing you to construct queries using a chain of methods. \
-While this may seem convenient to some, it's typical for all ORM, but it's worth noting a few points: \
+While some may find it convenient, it's typical, like all ORMS, but it's worth noting a few points: \
 When using ```rawSqlSelect```, you can select not only types whose classes are marked with an annotation,
-but also arbitrary classes with a public constructor without a parameter. The main thing is that the field names match
+but also arbitrary classes with a public constructor without a parameter. The main thing is that the field names match the fields in the selection.
+You can also iterate over a cursor without creating a list. \
+When using the ```toString()``` overload, you can view the query in text form. \
+Implementation examples:
+```java
+    @MapTable
+    class Master {
+    
+    @MapPrimaryKey
+    public int id;
+    
+    @MapColumn
+    public int age=10;
+    
+    @MapColumn
+    public String name="name";
+    
+    @MapColumn
+    public LocalDateTime dateTime = LocalDateTime.now().minusDays(1);
+    }
+    
+    class PartialMaster {
+        public int id;
+        
+        public int age;
+    }
+
+try (ISession session = Configure.getSession()) {
+    session.query(Master.class).dropTableIfExists();
+    session.query(Master.class).createTable();
+
+    List<Master>  list=new ArrayList<>(20);
+    for (int i = 0; i < 20; i++) {
+        Master master=new Master();
+        master.age=i;
+        master.dateTime=LocalDateTime.now().plusDays(i);
+        master.name="name"+i;
+        list.add(master);
+
+    }
+    session.insertBulk(list);
+
+    List<PartialMaster> listT=session.query(PartialMaster.class).rawSqlSelect("select id age from "+session.getTableName(Master.class)).toList();
+    assert listT.size()==20;
+
+    List<Master> listT3=session.query(Master.class).rawSqlSelect("select * from "+session.getTableName(Master.class))
+        .where("name not null").where("age > ?",-1).orderBy("name").toList();
+    assert listT3.size()==20;
+
+    String sql= session.query(Master.class)
+        .rawSqlSelect("select * from "+session.getTableName(Master.class))
+        .where("name not null")
+        .where("age > ?",-1)
+        .orderBy("name").toString();
+    Log.i("____sql____",sql);
+
+    session.query(PartialMaster.class).rawSqlSelect("select * from "+session.getTableName(Master.class))
+        .where("name not null").orderBy("age")
+        .iterator(master -> Log.i("____age_____",String.valueOf(master.age)));
+
+    List<Integer> integers=new ArrayList<>();
+    session.query(Master.class).where(" name not null").iterator(master -> integers.add(master.age));
+    assert integers.size()==20;
+
+    int count= session.query(Master.class).where("name not null").where("age > ? ",5).orderBy("mame").count();
+    assert count==14;
+
+    var o=session.query(Master.class)
+        .where(" name = ?","name5")
+        .where("age==?",5)
+        .orderBy("name")
+        .orderBy("age")
+        .limit(10).toList();
+    assert o.size()==1;
+
+    o=session.query(Master.class).limitOffSet(3,5).toList();
+    assert o.size()==3;
+
+    var r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(5)).firstOrDefault();
+    assert r!=null;
+
+    r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(50)).firstOrDefault();
+    assert r==null;
+    r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(5)).singleOrDefault();
+    assert r==null;
+    //r=session.query(Master.class).where("dateTime > ?",LocalDateTime.now().plusDays(50)).single(); //Error
+
+    var t=session.query(Master.class).groupBy("name");
+    assert t.size()==20;
+
+    var names=session.query(Master.class).distinctBy("name");
+    assert t.size()==20;
+
+    String tempSql="select * from "+session.getTableName(Master.class);
+    var listTemp=session.query(PartialMaster.class).rawSqlSelect(tempSql).where("age > ?",-1).toList();
+    assert listTemp.size()==20;
+
+    var any=session.query(Master.class).where("age < 0").any();
+    assert any==false;
+
+}
+```
+### interface IUserType
+### Marking objects through inheritance of the Persistent class <a name="Persistent"></a>
+One of the challenges when creating form objects is storing information about an object. In our case, this is information about where the object was obtained, whether from a database or not. Different form objects use different approaches, for example, creating a proxy object based on a given type (Java, C#), marking the object with a special attribute (C#), etc.
+In our case, this is inheritance of the object describing the table entity from the Persistent class.
+This class has only one Boolean field, "boolean isPersistent;", which characterizes the object's origin (true - retrieved from the database; false - created on the client and not saved in the database).
+Based on this, it can be used to decide what to do with an object when it's passed to the "save" method: insert or update. At the same time, this field also decides whether to throw an exception when inserting an object retrieved from the database, or whether to delete or update a locally created object.
+
+Using this inheritance isn't a must; you can opt out and track the object's origin yourself. In that case, you won't be able to use the "save" method.
+
+#### Retrieving typed lists from a partial record from the <a name="312"></a> table
+Probably the simplest way to solve this problem is through the use of subclasses.
+
+Let's decompose the target class into subclasses:
+```java
+
+@MapTableName("main")
+@MapTableReadOnly
+class BaseMain{
+    @MapPrimaryKeyName("_id")
+    int id;
+
+}
+@MapTableReadOnly
+class SubMain extends BaseMain {
+    @MapColumn
+    public String name;
+    @MapColumn
+    public int age;
+}
+class TableMain extends SubMain {
+    @MapColumn
+    public String email;
+}
+
+ISession session=Configure.getSession();
+try {
+    session.dropTableIfExists(TableMain.class);
+    session.createTableIfNotExists(TableMain.class);
+} catch (Exception e) {
+    throw new RuntimeException(e);
+}
+for (int i = 0; i < 5; i++) {
+    TableMain main=new TableMain();
+    main.age=10;
+    main.name="Leo"+i;
+    main.email="leo123@.leo.com";
+    session.insert(main);
+}
+var list1= session.getList(TableMain.class,"1 order by _id");
+var list2= session.getList(SubMain.class,"1 order by _id");
+var list3= session.getList(BaseMain.class,"1 order by _id");
+assertTrue((list1.size()+list2.size()+list3.size())==5*3);
+for (int i = 0; i <5; i++) {
+    assertEquals(list1.get(i).id,list2.get(i).id);
+    assertEquals(list2.get(i).id,list3.get(i).id);
+    assertEquals(list1.get(i).age,list2.get(i).age);
+    assertEquals(list1.get(i).name,list2.get(i).name);
+}
+/*When attempting to modify, an error occurs because the class is closed with the annotation:  @MapTableReadOnly */
+//session.insert(list2.get(1)); //error table read only
+//session.update(list2.get(1)); //error table read only
+//session.delete(list2.get(1)); //error table read only
+//session.deleteRows(SubMain.class);//error table read only
+//session.updateRows(SubMain.class,new PairColumnValue().put("name","newName"),null);//error table read only
+```
+> [!NOTE]\
+> Note that I've marked all subclasses with the annotation: ```@MapTableReadOnly```.
+> This protects my table if I modify the table through objects of these subclasses or by specifying the subclass type.\
+> When I try to modify the table, I'll get an error.
+
+Another way is to get a typed list using the [getListFree](#getListFree) method. You need to prepare a select query.
+This can be a JOIN or UNION SELECT. The main requirement is that the target type have fields with names matching the query fields,
+or fields annotated with "@MapColumnName".\
+As a final option, get a Cursor and iterate over it yourself.
+When iterating over a cursor, you can use the fill method: [objectFiller](#objectFiller)
+It's worth noting the use of the query parameter (where) and the Object... parameters parameter in the function. The "where" parameter doesn't require the word "where." If "where" isn't needed, you can use ":1" or "1=1."
+
+Example: "id= 2," "id=2 and name not null, order by name LIMIT 10," "1 LIMIT 10," "1 order by name," etc.
+
+The parameters parameter is translated into a string array. The order of entries
+must match the order of the parameter (?) in the query condition string.
+
+### Asynchronous Operations <a name="async"></a>
+Fluent methods of the IQueryable interface implement "CompletableFuture" wrappers for asynchronous database access,
+without blocking the main thread. Not all methods are implemented, but the most commonly used ones. This is a typical use case.
+Examples of how to work with them are in the Javadoc archive.
+Basic example:
+```java
+java
+import android.os.Handler;
+import android.os.Looper;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+// Create a custom thread pool for background tasks
+ExecutorService executor = Executors.newFixedThreadPool(4);
+
+public void fetchDataAndDisplay() {
+// 1. Start an asynchronous task on our thread pool
+CompletableFuture.supplyAsync(() -> {
+// Simulate a long-running operation (e.g., a network request)
+try {
+Thread.sleep(2000);
+return "Data downloaded";
+} catch (InterruptedException e) {
+throw new IllegalStateException(e);
+}
+}, executor)
+// 2. Process the result after the first task completes
+.thenApplyAsync(result -> {
+// Simulate data processing
+return "Processed data: " + result;
+}, executor)
+// 3. Perform actions on the result on the main thread
+.thenAcceptAsync(finalResult -> {
+// Update the UI component
+updateTextView(finalResult);
+}, command -> new Handler(Looper.getMainLooper()).post(command));
+}
+
+// Method for updating the UI; must be called on the main thread
+private void updateTextView(String text) {
+// Here's the code for updating the TextView, ProgressBar, etc.
+// textView.setText(text);
+}
+```
+
+### How to add to the project <a name="312312"></a>
+At the root of the project, there is a directory: ```aar```. It contains two files: ```bitnicorm-release.aar``` and ```sources.jar``` (help description tables).
+To add to the project: create a ```libs``` directory
+```markdown
+app/
+├─ libs/
+│ ├─ bitnicorm-release.aar
+│ └─ sources.jar
+├─ build.gradle.kts
+│
+└─../ settings.gradle.kts
+
+```
+
+In ```build.gradle.kts```
+```markdown
+dependencyResolutionManagement {
+        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+             repositories {
+                  google()
+                  mavenCentral()
+                  latDir {
+                    dirs("app/libs")
+                  }
+             }
+}
+```
+Installing from jitpack.io
+```markdown
+dependencyResolutionManagement {
+                 repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+                         repositories {
+                         mavenCentral()
+                         maven { url = uri("https://jitpack.io") }
+                       }
+}
+```
+```markdown
+dependencies {
+                implementation("com.github.ionson100:orm_android_aar:v1.2.5")
+}
+```
+Also, in the project root there is a rar archive ```javadoc.rar```, which is a folder containing javadoc.
 
 
 

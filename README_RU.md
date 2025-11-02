@@ -1372,7 +1372,22 @@ dependencies {
     //implementation("com.google.code.gson:gson:2.13.2") по желанию для использования аннотации @MapColumnJson
 }
 ```
-Так же в корне проекта есть архив rar ```javadoc.rar``` это папка с javadoc
+Установка из jitpack.io
+```
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url = uri("https://jitpack.io") }
+		}
+	}
+```
+```
+dependencies {
+	        implementation("com.github.ionson100:orm_android_aar:v1.2.5")
+	}
+```
+Так же в корне проекта есть архив rar ```javadoc.rar``` это папка с javadoc.
 
 
 
