@@ -1,3 +1,4 @@
+[![](https://jitpack.io/v/ionson100/orm_android_aar.svg)](https://jitpack.io/#ionson100/orm_android_aar)
 ### Another ORM for Android
 License: https://www.apache.org/licenses/LICENSE-2.0.txt
 [Quick Start](#start)
