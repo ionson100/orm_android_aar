@@ -99,32 +99,10 @@ afterEvaluate {
     publishing {
         publications {
             create<MavenPublication>("release") {
-                from(components["release"])
-
+                from (components["release"])
                 groupId = "com.github.ionson100"
                 artifactId = "bitnicorm"
-                version = "1.2.3" // Your library version
-
-                pom {
-                    name.set("bitnicorm")
-                    description.set("orm android")
-                    url.set("https://github.com/ionson100/orm_android_aar")
-
-                    licenses {
-                        license {
-                            name.set("The Apache License, Version 2.0")
-                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id.set("ionson100")
-                            name.set("Ion Ionow")
-                            email.set("ionson100@gmail.com")
-                        }
-                    }
-                }
+                version = "1.2.3"
             }
         }
     }
