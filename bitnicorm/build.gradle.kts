@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    id("com.android.library")
+    kotlin("android")
     `maven-publish`
 
 }
@@ -43,10 +43,7 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-//    tasks.register<Jar>("sourceJar") {
-//        archiveClassifier.set("sources")
-//        from(android.sourceSets["main"].java.srcDirs)
-//    }
+
 }
 
 dependencies {
@@ -59,51 +56,52 @@ dependencies {
         //implementation(files("C:\\Users\\123\\AppData\\Local\\Android\\Sdk\\platforms\\android-36\\android.jar"))
     api(libs.gson)
 }
-//afterEvaluate {
-//
-//    //gradlew assembleRelease
-//    val versionName = "1.2.3"
-//    val libName = "bitnicorm"
-//
-//    // 🔹 основная задача AAR
-//    val releaseAar = tasks.named("bundleReleaseAar")
-//
-//    // 🔹 создаём source.jar с тем же именем и версией
-//    val sourceJar = tasks.register<Jar>("sourceJar") {
-//        group = "build"
-//        archiveBaseName.set(libName)
-//        archiveVersion.set(versionName)
-//        archiveClassifier.set("sources")
-//
-//        from(android.sourceSets["main"].java.srcDirs)
-//        from("src/main/java")
-//
-//        destinationDirectory.set(file("${layout.buildDirectory.get()}/outputs/aar"))
-//    }
-//
-//    // 🔹 переименовываем AAR после сборки (чтобы версия была в имени)
-//    releaseAar.configure {
-//        doLast {
-//            val outputDir = file("${layout.buildDirectory.get()}/outputs/aar")
-//            val originalAar = outputDir.listFiles()?.find { it.name.endsWith(".aar") }
-//            if (originalAar != null) {
-//                val targetFile = File(outputDir, "$libName-$versionName.aar")
-//                originalAar.renameTo(targetFile)
-//                println("✅ AAR renamed to: ${targetFile.name}")
-//            }
-//        }
-//        finalizedBy(sourceJar)
-//    }
-//}
 afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
-                from (components["release"])
-                groupId = "com.github.ionson100"
-                artifactId = "bitnicorm"
-                version = "1.2.3"
+
+    //gradlew assembleRelease
+    val versionName = "1.2.3"
+    val libName = "bitnicorm"
+
+    // 🔹 основная задача AAR
+    val releaseAar = tasks.named("bundleReleaseAar")
+
+    // 🔹 создаём source.jar с тем же именем и версией
+    val sourceJar = tasks.register<Jar>("sourceJar") {
+        group = "build"
+        archiveBaseName.set(libName)
+        archiveVersion.set(versionName)
+        archiveClassifier.set("sources")
+
+        from(android.sourceSets["main"].java.srcDirs)
+        from("src/main/java")
+
+        destinationDirectory.set(file("${layout.buildDirectory.get()}/outputs/aar"))
+    }
+
+    // 🔹 переименовываем AAR после сборки (чтобы версия была в имени)
+    releaseAar.configure {
+        doLast {
+            val outputDir = file("${layout.buildDirectory.get()}/outputs/aar")
+            val originalAar = outputDir.listFiles()?.find { it.name.endsWith(".aar") }
+            if (originalAar != null) {
+                val targetFile = File(outputDir, "$libName-$versionName.aar")
+                originalAar.renameTo(targetFile)
+                println("✅ AAR renamed to: ${targetFile.name}")
             }
+        }
+        finalizedBy(sourceJar)
+    }
+}
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            afterEvaluate {
+                from(components["release"])
+            }
+
+            groupId = "com.github.ionson100" // 👈 твой GitHub username
+            artifactId = "bitnicorm"          // 👈 имя библиотеки
+            version = "1.2.3"                  // 👈 версия тега
         }
     }
 }
