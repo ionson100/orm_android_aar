@@ -101,7 +101,7 @@ publishing {
 
             groupId = "com.github.ionson100" // 👈 твой GitHub username
             artifactId = "bitnicorm"          // 👈 имя библиотеки
-            version = "1.2.3"                  // 👈 версия тега
+            version = "1.2.5"                  // 👈 версия тега
         }
     }
 }
