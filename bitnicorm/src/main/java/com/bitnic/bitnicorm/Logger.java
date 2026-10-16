@@ -2,7 +2,7 @@ package com.bitnic.bitnicorm;
 
 import android.annotation.SuppressLint;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteQuery;
+import net.zetetic.database.sqlcipher.SQLiteQuery;
 import android.util.Log;
 
 import java.lang.reflect.Field;

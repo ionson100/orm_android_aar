@@ -3,14 +3,22 @@ package com.bitnic.bitnicorm;
 
 import android.content.Context;
 import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
+
+import net.zetetic.database.sqlcipher.SQLiteDatabase;
+import net.zetetic.database.sqlcipher.SQLiteOpenHelper;
 
 /**
  * The type Data base helper.
  */
 class DataBaseHelper extends SQLiteOpenHelper {
 
+    static {
+        // Нативная библиотека SQLCipher.
+        try {
+            System.loadLibrary("sqlcipher");
+        } catch (Throwable ignored) {
+        }
+    }
 
     private ITask<SQLiteDatabase> iOnOpenHelper;
 
@@ -22,7 +30,7 @@ class DataBaseHelper extends SQLiteOpenHelper {
      * @param version      the version
      */
     public DataBaseHelper(Context context, String databasePath, int version) {
-        super(context, databasePath, null, version);
+        super(context, databasePath, Configure.getDatabaseKey(), null, version, 0, null, null, false);
     }
 
     /**
@@ -34,7 +42,7 @@ class DataBaseHelper extends SQLiteOpenHelper {
      * @param iOnOpenHelper the on open helper
      */
     public DataBaseHelper(Context context, String databasePath, int version, ITask<SQLiteDatabase> iOnOpenHelper) {
-        super(context, databasePath, null, version);
+        super(context, databasePath, Configure.getDatabaseKey(), null, version, 0, null, null, false);
         this.iOnOpenHelper = iOnOpenHelper;
     }
 

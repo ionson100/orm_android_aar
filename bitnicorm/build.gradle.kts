@@ -51,6 +51,10 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
         //implementation(files("C:\\Users\\123\\AppData\\Local\\Android\\Sdk\\platforms\\android-36\\android.jar"))
     api(libs.gson)
+
+    // Шифрование локальной БД (SQLCipher).
+    api("net.zetetic:sqlcipher-android:4.19.1@aar")
+    api("androidx.sqlite:sqlite:2.7.0")
 }
 //afterEvaluate {
 //
@@ -97,7 +101,7 @@ publishing {
 
             groupId = "com.github.ionson100" // 👈 твой GitHub username
             artifactId = "orm_android_aar"    // 👈 координата, под которой артефакт публикуется (как у JitPack)
-            version = "v1.2.7"                 // 👈 версия = имя тега (как на JitPack)
+            version = "v1.2.8"                 // 👈 версия = имя тега (как на JitPack)
         }
     }
 }

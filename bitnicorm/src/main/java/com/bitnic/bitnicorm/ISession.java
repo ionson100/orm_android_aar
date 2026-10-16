@@ -3,7 +3,7 @@ package com.bitnic.bitnicorm;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import net.zetetic.database.sqlcipher.SQLiteDatabase;
 
 import androidx.annotation.NonNull;
 

@@ -14,7 +14,7 @@ import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import net.zetetic.database.sqlcipher.SQLiteDatabase;
 
 import androidx.annotation.NonNull;
 
@@ -60,6 +60,21 @@ public class Configure implements ISession {
 
     static IBlobCrypto getBlobCrypto() {
         return blobCrypto;
+    }
+
+    private static byte[] databaseKey;
+
+    /**
+     * Задаёт пароль (ключ) для шифрования локальной БД (SQLCipher).
+     * Если не задан — БД открывается как обычная (незашифрованная).
+     * Вызывать до создания {@link Configure}.
+     */
+    public static void setDatabaseKey(byte[] key) {
+        databaseKey = key;
+    }
+
+    static byte[] getDatabaseKey() {
+        return databaseKey != null ? databaseKey : new byte[0];
     }
 
     private SQLiteDatabase sqLiteDatabaseForReadable = null;
