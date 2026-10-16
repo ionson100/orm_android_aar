@@ -48,6 +48,19 @@ public class Configure implements ISession {
     static boolean IsWriteLog = false;
     static String dataBaseName;
     private static DataBaseHelper myDbHelper;
+    private static IBlobCrypto blobCrypto;
+
+    /**
+     * Подключает крипто-провайдер для шифрования сериализованных BLOB-полей.
+     * Если не задан (null) — поведение как раньше (без шифрования).
+     */
+    public static void setBlobCrypto(IBlobCrypto crypto) {
+        blobCrypto = crypto;
+    }
+
+    static IBlobCrypto getBlobCrypto() {
+        return blobCrypto;
+    }
 
     private SQLiteDatabase sqLiteDatabaseForReadable = null;
     private SQLiteDatabase sqLiteDatabaseForWritable = null;

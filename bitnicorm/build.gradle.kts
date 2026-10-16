@@ -1,6 +1,5 @@
 plugins {
     id("com.android.library")
-    kotlin("android")
     `maven-publish`
 
 }
@@ -39,9 +38,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
     }
 
 }
@@ -100,8 +96,8 @@ publishing {
             }
 
             groupId = "com.github.ionson100" // 👈 твой GitHub username
-            artifactId = "bitnicorm"          // 👈 имя библиотеки
-            version = "1.2.6"                  // 👈 версия тега
+            artifactId = "orm_android_aar"    // 👈 координата, под которой артефакт публикуется (как у JitPack)
+            version = "1.2.7"                  // 👈 версия тега
         }
     }
 }

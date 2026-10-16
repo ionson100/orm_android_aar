@@ -4,9 +4,13 @@ import com.google.gson.Gson;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -77,7 +81,16 @@ public class UtilsHelper {
         try (ObjectOutputStream out = new ObjectOutputStream(bos)) {
             out.writeObject(obj);
             out.flush();
-            return bos.toByteArray();
+            byte[] raw = bos.toByteArray();
+            // Если приложением подключён крипто-провайдер — шифруем blob перед записью.
+            IBlobCrypto crypto = Configure.getBlobCrypto();
+            if (crypto != null) {
+                byte[] enc = crypto.encrypt(raw);
+                if (enc != null) {
+                    return enc;
+                }
+            }
+            return raw;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -86,16 +99,69 @@ public class UtilsHelper {
     /**
      * Deserialize byte object.
      *
+     * <p>Читает blob с защитой от десериализации опасных классов («gadget»-цепочки).
+     * Если приложением подключён {@link IBlobCrypto}, сначала расшифровывает данные
+     * (старые незашифрованные записи реализация возвращает как есть).</p>
+     *
      * @param bytes the bytes
      * @return the object
      */
     static Object deserializeByte(byte[] bytes) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        try (ObjectInput in = new ObjectInputStream(bis)) {
+        byte[] data = bytes;
+        IBlobCrypto crypto = Configure.getBlobCrypto();
+        if (crypto != null) {
+            byte[] dec = crypto.decrypt(bytes);
+            if (dec != null) {
+                data = dec;
+            }
+        }
+        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        try (ObjectInput in = new SafeObjectInputStream(bis)) {
             return in.readObject();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    /**
+     * Поток десериализации с фильтром классов: запрещает классы, типичные для
+     * «gadget»-цепочек. Работает на всех уровнях API (в отличие от {@code ObjectInputFilter}).
+     */
+    private static final class SafeObjectInputStream extends ObjectInputStream {
+        SafeObjectInputStream(InputStream in) throws IOException {
+            super(in);
+        }
+
+        @Override
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+            String name = desc.getName();
+            if (isForbiddenClass(name)) {
+                throw new InvalidClassException("Deserialization of class is not allowed", name);
+            }
+            return super.resolveClass(desc);
+        }
+    }
+
+    private static boolean isForbiddenClass(String name) {
+        if (name == null) {
+            return true;
+        }
+        if (name.startsWith("[")) {
+            return false; // массивы: проверяется класс элемента
+        }
+        return name.startsWith("java.lang.Runtime")
+                || name.startsWith("java.lang.ProcessBuilder")
+                || name.startsWith("java.lang.reflect.")
+                || name.startsWith("java.lang.invoke.")
+                || name.startsWith("javax.script.")
+                || name.startsWith("javax.management.")
+                || name.startsWith("java.rmi.")
+                || name.startsWith("java.beans.")
+                || name.startsWith("sun.")
+                || name.startsWith("com.sun.")
+                || name.startsWith("org.apache.commons.collections")
+                || name.startsWith("org.springframework.")
+                || name.startsWith("com.thoughtworks.xstream");
     }
 
     /**
