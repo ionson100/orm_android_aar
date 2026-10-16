@@ -97,7 +97,7 @@ publishing {
 
             groupId = "com.github.ionson100" // 👈 твой GitHub username
             artifactId = "orm_android_aar"    // 👈 координата, под которой артефакт публикуется (как у JitPack)
-            version = "1.2.7"                  // 👈 версия тега
+            version = "v1.2.7"                 // 👈 версия = имя тега (как на JitPack)
         }
     }
 }
